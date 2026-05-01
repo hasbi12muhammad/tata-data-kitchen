@@ -1,0 +1,44 @@
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&display=swap");
+@import "tailwindcss";
+
+:root {
+  /* Warm Earthy Palette */
+  --color-cloth: #e9dfc6; /* base background */
+  --color-clay: #b88d6a; /* muted/neutral */
+  --color-casa: #7c563d; /* primary/sidebar */
+  --color-dune: #a05035; /* CTA/action */
+  --color-verde: #737b4c; /* success/profit */
+
+  --color-background: #f2ebd9; /* cloth lightened */
+  --color-surface: #fbf8f2; /* card surface */
+  --color-foreground: #2c1810; /* dark brown text */
+  --color-muted-fg: #7c6352; /* secondary text */
+  --color-border: #d9ccaf; /* warm border */
+  --color-ring: #a05035;
+  --color-destructive: #c0392b;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: "Open Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: "Poppins", system-ui, sans-serif;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

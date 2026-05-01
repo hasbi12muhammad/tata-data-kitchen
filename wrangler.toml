@@ -1,0 +1,8 @@
+name = "tata-data-dapur"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[vars]
+NEXT_PUBLIC_SUPABASE_URL = "https://tqhfnaerzttcfceoygxw.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxaGZuYWVyenR0Y2ZjZW95Z3h3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYxNzAzMzEsImV4cCI6MjA5MTc0NjMzMX0.ODfdCsO8w1H6CF1b-SERbfp0dstnQV-HSIlEjG5pC4w"
