@@ -9,7 +9,7 @@ import { usePurchasesByDate, useSalesByDate } from "@/hooks/useDailyData";
 import { formatCurrency } from "@/lib/utils";
 import { Expense, Purchase, Sale } from "@/types";
 import { format } from "date-fns";
-import { id as localeId } from "date-fns/locale";
+import { enUS } from "date-fns/locale";
 import {
   LucideIcon,
   Receipt,
@@ -126,7 +126,7 @@ export default function DashboardPage() {
   const dateDisplay = (() => {
     try {
       return format(new Date(date + "T00:00:00"), "d MMMM yyyy", {
-        locale: localeId,
+        locale: enUS,
       });
     } catch {
       return date;
