@@ -30,7 +30,7 @@ function calcHPP(items: RecipeItem[], usePrev: boolean): number {
   return items.reduce((sum, ri) => {
     const item = ri.item as any;
     const price = usePrev
-      ? (item?.prev_avg_price || item?.avg_price || 0)
+      ? (item?.prev_avg_price ?? 0)
       : (item?.avg_price ?? 0);
     return sum + price * ri.quantity_used;
   }, 0);

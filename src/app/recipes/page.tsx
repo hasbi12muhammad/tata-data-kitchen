@@ -263,9 +263,9 @@ export default function RecipesPage() {
                       {(() => {
                         const diff = recipe.hpp - (recipe as any).prev_hpp;
                         const prev = (recipe as any).prev_hpp;
-                        if (!prev || Math.abs(diff) < 1) return null;
-                        const pct = (diff / prev) * 100;
+                        if (Math.abs(diff) < 1) return null;
                         const up = diff > 0;
+                        const pct = prev > 0 ? (diff / prev) * 100 : null;
                         return (
                           <span
                             className={`inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded ${up ? "bg-red-50 text-red-600" : "bg-[#737B4C]/10 text-[#5C6B38]"}`}
@@ -275,8 +275,8 @@ export default function RecipesPage() {
                             ) : (
                               <ArrowDown className="w-2.5 h-2.5" />
                             )}
-                            {formatCurrency(Math.abs(diff))}{" "}
-                            ({Math.abs(pct).toFixed(1)}%)
+                            {formatCurrency(Math.abs(diff))}
+                            {pct !== null && ` (${Math.abs(pct).toFixed(1)}%)`}
                           </span>
                         );
                       })()}
