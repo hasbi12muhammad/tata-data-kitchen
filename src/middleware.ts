@@ -43,11 +43,9 @@ export async function middleware(request: NextRequest) {
       // Supabase unreachable — treat as unauthenticated
     }
 
-    const RECIPE_HIDDEN_UID = "0a6cfba1-0ac2-4792-b306-e67ee912390b";
-
-    // Public routes — no auth or version check needed
-    if (pathname === "/login" || pathname === "/unauthorized") {
-      if (user && pathname === "/login") {
+    // Public routes — no auth check needed
+    if (pathname === "/login") {
+      if (user) {
         return NextResponse.redirect(new URL("/dashboard", request.url));
       }
       return NextResponse.next({ request });
@@ -57,23 +55,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // Version guard: only v1 users allowed
-    const { data: profile } = await supabase
-      .from("user_profiles")
-      .select("version")
-      .eq("id", user.id)
-      .single();
-    if (!profile || profile.version !== "v1") {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL("/unauthorized", request.url));
-    }
-
     if (pathname === "/") {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-
-    // Hide Recipes module for specific user — redirect to dashboard
-    if (user.id === RECIPE_HIDDEN_UID && pathname.startsWith("/recipes")) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
 
