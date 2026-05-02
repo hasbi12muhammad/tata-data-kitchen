@@ -1,6 +1,6 @@
 {
-  "name": "Tata Data Kitchen",
-  "short_name": "TDK",
+  "name": "My Kitchen Book",
+  "short_name": "MKB",
   "description": "Manage COGS, recipes, and F&B business reports",
   "start_url": "/dashboard",
   "display": "standalone",

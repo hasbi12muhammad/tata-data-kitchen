@@ -4,13 +4,13 @@ import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Tata Data Kitchen",
+  title: "My Kitchen Book",
   description: "Manage COGS, recipes, and F&B business reports",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Tata Data Kitchen",
+    title: "My Kitchen Book",
   },
   formatDetection: { telephone: false },
 };

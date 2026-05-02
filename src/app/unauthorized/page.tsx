@@ -10,7 +10,7 @@ export default function UnauthorizedPage() {
           <div className="w-12 h-12 rounded-2xl bg-[#7C563D] flex items-center justify-center mb-3">
             <Image src={TdLogo} alt="TD" width={36} height={36} className="object-contain" />
           </div>
-          <h1 className="text-2xl font-bold text-[#2C1810]">Tata Data Kitchen</h1>
+          <h1 className="text-2xl font-bold text-[#2C1810]">My Kitchen Book</h1>
         </div>
 
         <div className="bg-[#FBF8F2] rounded-2xl border border-[#D9CCAF] shadow-sm p-6 text-center">
@@ -30,7 +30,7 @@ export default function UnauthorizedPage() {
         </div>
 
         <p className="text-center text-xs text-[#B88D6A] mt-6">
-          Tata Data Kitchen &copy; {new Date().getFullYear()}
+          My Kitchen Book &copy; {new Date().getFullYear()}
         </p>
       </div>
     </div>

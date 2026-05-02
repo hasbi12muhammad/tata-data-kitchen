@@ -70,7 +70,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               className="rounded-lg object-contain bg-[#A05035] p-0.5"
             />
             <span className="text-[#E9DFC6] font-bold text-lg tracking-tight">
-              Tata Data Kitchen
+              My Kitchen Book
             </span>
           </div>
           <button

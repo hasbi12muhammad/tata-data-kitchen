@@ -31,7 +31,7 @@ export default function LoginPage() {
           <div className="w-12 h-12 rounded-2xl bg-[#7C563D] flex items-center justify-center mb-3">
             <Image src={TdLogo} alt="TD" width={36} height={36} className="object-contain" />
           </div>
-          <h1 className="text-2xl font-bold text-[#2C1810]">Tata Data Kitchen</h1>
+          <h1 className="text-2xl font-bold text-[#2C1810]">My Kitchen Book</h1>
           <p className="text-sm text-[#7C6352] mt-1">
             Manage COGS & kitchen business reports
           </p>
@@ -73,7 +73,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-[#B88D6A] mt-6">
-          Tata Data Kitchen &copy; {new Date().getFullYear()}
+          My Kitchen Book &copy; {new Date().getFullYear()}
         </p>
       </div>
     </div>
