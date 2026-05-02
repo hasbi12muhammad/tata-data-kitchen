@@ -166,6 +166,7 @@ export function useUpdateSale() {
         .update({
           quantity_sold: p.quantity_sold,
           selling_price: p.selling_price,
+          hpp_at_sale: p.hpp_at_sale,
           profit,
           category_id: p.category_id ?? null,
           ...(p.date ? { created_at: new Date(p.date).toISOString() } : {}),

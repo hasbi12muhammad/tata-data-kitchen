@@ -79,7 +79,12 @@ export function useDeleteItem() {
     mutationFn: async (id: string) => {
       const supabase = createClient();
       const { error } = await supabase.from("items").delete().eq("id", id);
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23503") {
+          throw new Error("Cannot delete item — it is used in purchases or recipes");
+        }
+        throw error;
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["items"] });
