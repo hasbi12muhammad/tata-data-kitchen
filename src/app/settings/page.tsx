@@ -38,6 +38,28 @@ function EmailConfirmHandler() {
 export default function SettingsPage() {
   const supabase = createClient();
 
+  const [storeName, setStoreName] = useState("");
+  const [storeNameLoading, setStoreNameLoading] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.user_metadata?.store_name) {
+        setStoreName(user.user_metadata.store_name);
+      }
+    });
+  }, []);
+
+  async function handleStoreNameUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    setStoreNameLoading(true);
+    const { error } = await supabase.auth.updateUser({
+      data: { store_name: storeName.trim() },
+    });
+    setStoreNameLoading(false);
+    if (error) toast.error(error.message);
+    else toast.success("Store name saved successfully");
+  }
+
   const [email, setEmail] = useState("");
   const [emailLoading, setEmailLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -89,6 +111,28 @@ export default function SettingsPage() {
         <EmailConfirmHandler />
       </Suspense>
       <div className="max-w-lg mx-auto flex flex-col gap-6">
+        {/* Store Name Section */}
+        <div className="bg-[#FBF8F2] rounded-2xl border border-[#D9CCAF] shadow-sm p-6">
+          <h2 className="text-base font-semibold text-[#2C1810] mb-1">
+            Store Name
+          </h2>
+          <p className="text-sm text-[#7C6352] mb-5">
+            Displayed in the sidebar to identify your store.
+          </p>
+          <form onSubmit={handleStoreNameUpdate} className="flex flex-col gap-4">
+            <Input
+              label="Store name"
+              type="text"
+              value={storeName}
+              onChange={(e) => setStoreName(e.target.value)}
+              placeholder="e.g. The Kitchen Lab"
+            />
+            <Button type="submit" loading={storeNameLoading} className="self-start">
+              Save
+            </Button>
+          </form>
+        </div>
+
         {/* Email Section */}
         <div className="bg-[#FBF8F2] rounded-2xl border border-[#D9CCAF] shadow-sm p-6">
           <h2 className="text-base font-semibold text-[#2C1810] mb-1">

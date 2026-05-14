@@ -19,7 +19,7 @@ import {
 import { Expense } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
-import { Pencil, Plus, Receipt, Search, Trash2, X } from "lucide-react";
+import { Filter, Pencil, Plus, Receipt, Search, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const cls =
@@ -38,6 +38,10 @@ export default function ExpensesPage() {
   const [filterCategory, setFilterCategory] = useState("");
   const [filterFrom, setFilterFrom] = useState("");
   const [filterTo, setFilterTo] = useState("");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [pendingFilterCategory, setPendingFilterCategory] = useState("");
+  const [pendingFilterFrom, setPendingFilterFrom] = useState("");
+  const [pendingFilterTo, setPendingFilterTo] = useState("");
 
   // ── modal state ─────────────────────────────────────────────
   const [modalOpen, setModalOpen] = useState(false);
@@ -136,59 +140,129 @@ export default function ExpensesPage() {
       title="Expenses"
       action={
         <Button size="sm" onClick={openCreate}>
-          <Plus className="w-4 h-4" /> Add
+          <Plus className="w-4 h-4" />
+          <span className="hidden sm:inline">Add</span>
         </Button>
       }
     >
       <Card>
+        {/* Filter bottom sheet */}
+        {filterSheetOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/40"
+              onClick={() => setFilterSheetOpen(false)}
+            />
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#FBF8F2] rounded-t-2xl shadow-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#2C1810]">Filter</span>
+                <button onClick={() => setFilterSheetOpen(false)} className="text-[#B88D6A] hover:text-[#7C6352]">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-[#7C6352] mb-1 block">Category</label>
+                  <select
+                    className={`${cls} w-full`}
+                    value={pendingFilterCategory}
+                    onChange={(e) => setPendingFilterCategory(e.target.value)}
+                  >
+                    <option value="">All categories</option>
+                    {categories?.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[#7C6352] mb-1 block">From date</label>
+                  <input
+                    type="date"
+                    className={`${cls} w-full`}
+                    value={pendingFilterFrom}
+                    onChange={(e) => setPendingFilterFrom(e.target.value)}
+                    max={pendingFilterTo || undefined}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[#7C6352] mb-1 block">To date</label>
+                  <input
+                    type="date"
+                    className={`${cls} w-full`}
+                    value={pendingFilterTo}
+                    onChange={(e) => setPendingFilterTo(e.target.value)}
+                    min={pendingFilterFrom || undefined}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    setPendingFilterCategory("");
+                    setPendingFilterFrom("");
+                    setPendingFilterTo("");
+                  }}
+                  className="flex-1 h-9 rounded-lg border border-[#D9CCAF] text-sm text-[#7C6352] font-medium hover:bg-[#EDE4CF] transition-colors"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => {
+                    setFilterCategory(pendingFilterCategory);
+                    setFilterFrom(pendingFilterFrom);
+                    setFilterTo(pendingFilterTo);
+                    setFilterSheetOpen(false);
+                  }}
+                  className="flex-1 h-9 rounded-lg bg-[#A05035] text-sm text-white font-medium hover:bg-[#8B4530] transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Filter bar */}
         <div className="px-4 py-3 border-b border-[#E5DACA] space-y-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#B88D6A]" />
-            <input
-              className={`${cls} w-full pl-8`}
-              placeholder="Search expenses..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#B88D6A] hover:text-[#7C6352]"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            <select
-              className={`${cls} flex-1 min-w-[120px]`}
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#B88D6A]" />
+              <input
+                className={`${cls} w-full pl-8`}
+                placeholder="Search expenses..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#B88D6A] hover:text-[#7C6352]"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setPendingFilterCategory(filterCategory);
+                setPendingFilterFrom(filterFrom);
+                setPendingFilterTo(filterTo);
+                setFilterSheetOpen(true);
+              }}
+              className={`relative h-9 px-3 rounded-lg border text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                (filterCategory || filterFrom || filterTo)
+                  ? "border-[#A05035] bg-[#A05035]/10 text-[#A05035]"
+                  : "border-[#D9CCAF] bg-[#FBF8F2] text-[#7C6352] hover:bg-[#EDE4CF]"
+              }`}
             >
-              <option value="">All categories</option>
-              {categories?.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex gap-2 flex-wrap items-center">
-            <span className="text-xs text-[#7C6352] font-medium">Period:</span>
-            <input
-              type="date"
-              value={filterFrom}
-              onChange={(e) => setFilterFrom(e.target.value)}
-              className={`${cls} w-auto`}
-            />
-            <span className="text-xs text-[#B88D6A]">–</span>
-            <input
-              type="date"
-              value={filterTo}
-              onChange={(e) => setFilterTo(e.target.value)}
-              className={`${cls} w-auto`}
-            />
+              <Filter className="w-3.5 h-3.5" />
+              Filter
+              {(filterCategory || filterFrom || filterTo) && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#A05035] text-white text-[10px] flex items-center justify-center font-bold">
+                  {[filterCategory, filterFrom, filterTo].filter(Boolean).length}
+                </span>
+              )}
+            </button>
           </div>
           <div className="flex items-center justify-between text-xs text-[#B88D6A]">
             <span>
@@ -203,10 +277,13 @@ export default function ExpensesPage() {
                   setFilterCategory("");
                   setFilterFrom("");
                   setFilterTo("");
+                  setPendingFilterCategory("");
+                  setPendingFilterFrom("");
+                  setPendingFilterTo("");
                 }}
                 className="text-[#A05035] hover:underline font-medium"
               >
-                Reset
+                Reset all
               </button>
             )}
           </div>

@@ -21,7 +21,7 @@ import { format } from "date-fns";
 import toast from "react-hot-toast";
 import { ImportExcelModal } from "@/components/ui/ImportExcelModal";
 import { useQueryClient } from "@tanstack/react-query";
-import { FileUp, Pencil, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
+import { FileUp, Filter, Pencil, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const cls =
@@ -85,6 +85,17 @@ export default function PurchasesPage() {
   const [totalPrice, setTotalPrice] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
 
+  const [search, setSearch] = useState("");
+  const [filterItem, setFilterItem] = useState("");
+  const [sortBy, setSortBy] = useState("date_desc");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [pendingSortBy, setPendingSortBy] = useState("date_desc");
+  const [pendingFilterItem, setPendingFilterItem] = useState("");
+  const [pendingDateFrom, setPendingDateFrom] = useState("");
+  const [pendingDateTo, setPendingDateTo] = useState("");
+
   function openEdit(p: Purchase) {
     setEditing(p);
     setQuantity(String(p.quantity));
@@ -102,16 +113,18 @@ export default function PurchasesPage() {
     setModalOpen(true);
   }
 
-  const [search, setSearch] = useState("");
-  const [filterItem, setFilterItem] = useState("");
-  const [sortBy, setSortBy] = useState("date_desc");
-  const [filterDateFrom, setFilterDateFrom] = useState("");
-  const [filterDateTo, setFilterDateTo] = useState("");
+  const selectedItem = editing
+    ? items?.find((i) => i.id === editing.item_id)
+    : items?.find((i) => i.id === itemId);
 
   const pricePerUnit =
     quantity && totalPrice && Number(quantity) > 0
       ? Number(totalPrice) / Number(quantity)
       : 0;
+
+  const avgPrice = selectedItem?.avg_price ?? 0;
+  const priceDiff = pricePerUnit > 0 && avgPrice > 0 ? pricePerUnit - avgPrice : null;
+  const pricePct = priceDiff !== null ? (priceDiff / avgPrice) * 100 : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -180,7 +193,7 @@ export default function PurchasesPage() {
           );
       }
     });
-  }, [purchases, search, filterItem, sortBy]);
+  }, [purchases, search, filterItem, sortBy, filterDateFrom, filterDateTo]);
 
   const hasFilters = search || filterItem || sortBy !== "date_desc" || filterDateFrom || filterDateTo;
 
@@ -194,75 +207,150 @@ export default function PurchasesPage() {
             variant="secondary"
             onClick={() => setImportOpen(true)}
           >
-            <FileUp className="w-4 h-4" /> Import
+            <FileUp className="w-4 h-4" />
+            <span className="hidden sm:inline">Import</span>
           </Button>
           <Button size="sm" onClick={openCreate}>
-            <Plus className="w-4 h-4" /> Add
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add</span>
           </Button>
         </div>
       }
     >
       <Card>
+        {/* Filter bottom sheet */}
+        {filterSheetOpen && (
+          <>
+            <div
+              className="fixed inset-0 z-40 bg-black/40"
+              onClick={() => setFilterSheetOpen(false)}
+            />
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#FBF8F2] rounded-t-2xl shadow-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-[#2C1810]">Filter</span>
+                <button onClick={() => setFilterSheetOpen(false)} className="text-[#B88D6A] hover:text-[#7C6352]">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium text-[#7C6352] mb-1 block">Sort</label>
+                  <select
+                    className={`${cls} w-full`}
+                    value={pendingSortBy}
+                    onChange={(e) => setPendingSortBy(e.target.value)}
+                  >
+                    <option value="date_desc">Newest</option>
+                    <option value="date_asc">Oldest</option>
+                    <option value="price_desc">Price ↑</option>
+                    <option value="price_asc">Price ↓</option>
+                    <option value="qty_desc">Highest qty</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[#7C6352] mb-1 block">Item</label>
+                  <select
+                    className={`${cls} w-full`}
+                    value={pendingFilterItem}
+                    onChange={(e) => setPendingFilterItem(e.target.value)}
+                  >
+                    <option value="">All items</option>
+                    {items?.map((i) => (
+                      <option key={i.id} value={i.id}>{i.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[#7C6352] mb-1 block">From date</label>
+                  <input
+                    type="date"
+                    className={`${cls} w-full`}
+                    value={pendingDateFrom}
+                    onChange={(e) => setPendingDateFrom(e.target.value)}
+                    max={pendingDateTo || undefined}
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-[#7C6352] mb-1 block">To date</label>
+                  <input
+                    type="date"
+                    className={`${cls} w-full`}
+                    value={pendingDateTo}
+                    onChange={(e) => setPendingDateTo(e.target.value)}
+                    min={pendingDateFrom || undefined}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => {
+                    setPendingSortBy("date_desc");
+                    setPendingFilterItem("");
+                    setPendingDateFrom("");
+                    setPendingDateTo("");
+                  }}
+                  className="flex-1 h-9 rounded-lg border border-[#D9CCAF] text-sm text-[#7C6352] font-medium hover:bg-[#EDE4CF] transition-colors"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={() => {
+                    setSortBy(pendingSortBy);
+                    setFilterItem(pendingFilterItem);
+                    setFilterDateFrom(pendingDateFrom);
+                    setFilterDateTo(pendingDateTo);
+                    setFilterSheetOpen(false);
+                  }}
+                  className="flex-1 h-9 rounded-lg bg-[#A05035] text-sm text-white font-medium hover:bg-[#8B4530] transition-colors"
+                >
+                  Apply
+                </button>
+              </div>
+            </div>
+          </>
+        )}
+
         <div className="px-4 py-3 border-b border-[#E5DACA] space-y-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#B88D6A]" />
-            <input
-              className={`${cls} w-full pl-8`}
-              placeholder="Search items..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            {search && (
-              <button
-                onClick={() => setSearch("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#B88D6A] hover:text-[#7C6352]"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
           <div className="flex gap-2">
-            <select
-              className={`${cls} flex-1`}
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#B88D6A]" />
+              <input
+                className={`${cls} w-full pl-8`}
+                placeholder="Search items..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#B88D6A] hover:text-[#7C6352]"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => {
+                setPendingSortBy(sortBy);
+                setPendingFilterItem(filterItem);
+                setPendingDateFrom(filterDateFrom);
+                setPendingDateTo(filterDateTo);
+                setFilterSheetOpen(true);
+              }}
+              className={`relative h-9 px-3 rounded-lg border text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                (filterItem || sortBy !== "date_desc" || filterDateFrom || filterDateTo)
+                  ? "border-[#A05035] bg-[#A05035]/10 text-[#A05035]"
+                  : "border-[#D9CCAF] bg-[#FBF8F2] text-[#7C6352] hover:bg-[#EDE4CF]"
+              }`}
             >
-              <option value="date_desc">Newest</option>
-              <option value="date_asc">Oldest</option>
-              <option value="price_desc">Price ↑</option>
-              <option value="price_asc">Price ↓</option>
-              <option value="qty_desc">Highest qty</option>
-            </select>
-            <select
-              className={`${cls} flex-1`}
-              value={filterItem}
-              onChange={(e) => setFilterItem(e.target.value)}
-            >
-              <option value="">All items</option>
-              {items?.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="flex gap-2 items-center">
-            <span className="text-xs text-[#B88D6A] whitespace-nowrap">From</span>
-            <input
-              type="date"
-              className={`${cls} flex-1`}
-              value={filterDateFrom}
-              onChange={(e) => setFilterDateFrom(e.target.value)}
-              max={filterDateTo || undefined}
-            />
-            <span className="text-xs text-[#B88D6A] whitespace-nowrap">to</span>
-            <input
-              type="date"
-              className={`${cls} flex-1`}
-              value={filterDateTo}
-              onChange={(e) => setFilterDateTo(e.target.value)}
-              min={filterDateFrom || undefined}
-            />
+              <Filter className="w-3.5 h-3.5" />
+              Filter
+              {(filterItem || sortBy !== "date_desc" || filterDateFrom || filterDateTo) && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#A05035] text-white text-[10px] flex items-center justify-center font-bold">
+                  {[filterItem, sortBy !== "date_desc", filterDateFrom, filterDateTo].filter(Boolean).length}
+                </span>
+              )}
+            </button>
           </div>
           <div className="flex items-center justify-between text-xs text-[#B88D6A]">
             <span>
@@ -278,10 +366,14 @@ export default function PurchasesPage() {
                   setSortBy("date_desc");
                   setFilterDateFrom("");
                   setFilterDateTo("");
+                  setPendingSortBy("date_desc");
+                  setPendingFilterItem("");
+                  setPendingDateFrom("");
+                  setPendingDateTo("");
                 }}
                 className="text-[#A05035] hover:underline font-medium"
               >
-                Reset
+                Reset all
               </button>
             )}
           </div>
@@ -458,13 +550,19 @@ export default function PurchasesPage() {
             />
           </div>
           {pricePerUnit > 0 && (
-            <div className="rounded-lg bg-[#737B4C]/10 border border-[#737B4C]/20 px-4 py-2.5">
+            <div className="rounded-lg bg-[#737B4C]/10 border border-[#737B4C]/20 px-4 py-2.5 space-y-1">
               <p className="text-xs text-[#5C6B38] font-medium">
                 Price per unit:{" "}
                 <span className="font-bold">
                   {formatCurrency(pricePerUnit)}
                 </span>
               </p>
+              {priceDiff !== null && pricePct !== null && (
+                <p className={`text-xs font-medium ${priceDiff > 0 ? "text-red-600" : "text-green-700"}`}>
+                  {priceDiff > 0 ? "▲" : "▼"}{" "}
+                  {formatCurrency(Math.abs(priceDiff))} ({pricePct > 0 ? "+" : ""}{pricePct.toFixed(1)}%) vs average price
+                </p>
+              )}
             </div>
           )}
           <div className="flex gap-2 pt-1">

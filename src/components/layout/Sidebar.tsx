@@ -3,7 +3,7 @@
 import Image from "next/image";
 import TdLogo from "../../../public/td-logo.png";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth, useCurrentUser } from "@/hooks/useAuth";
 import {
   BarChart3,
   BookOpen,
@@ -36,6 +36,8 @@ interface SidebarProps {
 export function Sidebar({ open, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { signOut } = useAuth();
+  const { data: user } = useCurrentUser();
+  const storeName = (user?.user_metadata?.store_name as string | undefined) || null;
   const nav = ALL_NAV;
 
   return (
@@ -61,17 +63,24 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex items-center justify-between px-5 h-16 border-b border-white/10">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <Image
               src={TdLogo}
               alt="TD"
               width={28}
               height={28}
-              className="rounded-lg object-contain bg-[#A05035] p-0.5"
+              className="rounded-lg object-contain bg-[#A05035] p-0.5 flex-shrink-0"
             />
-            <span className="text-[#E9DFC6] font-bold text-lg tracking-tight">
-              My Kitchen Book
-            </span>
+            <div className="min-w-0">
+              <span className="text-[#E9DFC6] font-bold text-lg tracking-tight block leading-tight">
+                My Kitchen Book
+              </span>
+              {storeName && (
+                <span className="text-[#E9DFC6]/55 text-xs truncate block leading-tight">
+                  {storeName}
+                </span>
+              )}
+            </div>
           </div>
           <button
             onClick={onClose}
