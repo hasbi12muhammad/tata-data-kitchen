@@ -131,6 +131,7 @@ export function useCreateSale() {
     }) => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
       const profit = p.selling_price - p.hpp_at_sale;
       const { date, sub_recipe_deductions, ...rest } = p;
       const { error } = await supabase.from("sales").insert({
@@ -156,6 +157,7 @@ export function useCreateSale() {
       qc.invalidateQueries({ queryKey: ["sales"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
       qc.invalidateQueries({ queryKey: ["recipes"] });
+      qc.invalidateQueries({ queryKey: ["report-sales"] });
       toast.success("Sale recorded");
     },
     onError: (e: Error) => toast.error(e.message),
