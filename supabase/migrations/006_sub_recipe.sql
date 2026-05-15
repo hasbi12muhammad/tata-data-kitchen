@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS public.productions (
 
 ALTER TABLE public.productions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "users_own_productions" ON public.productions;
 CREATE POLICY "users_own_productions" ON public.productions
   FOR ALL
   USING  (auth.uid() = user_id)
