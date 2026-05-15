@@ -406,7 +406,6 @@ export default function RecipesPage() {
                             updateRow(i, "item_id", val);
                           }
                         }}
-                        required
                       >
                         <option value="">Select ingredient...</option>
                         {(items ?? []).length > 0 && (
