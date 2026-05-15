@@ -103,8 +103,8 @@ export default function PurchasesPage() {
   const [subRecipeId, setSubRecipeId] = useState("");
 
   const [prodSearch, setProdSearch] = useState("");
-  const [prodFilterDateFrom, setProdFilterDateFrom] = useState("");
-  const [prodFilterDateTo, setProdFilterDateTo] = useState("");
+  const [prodFrom, setProdFrom] = useState("");
+  const [prodTo, setProdTo] = useState("");
   const [prodFilterSheetOpen, setProdFilterSheetOpen] = useState(false);
   const [pendingProdDateFrom, setPendingProdDateFrom] = useState("");
   const [pendingProdDateTo, setPendingProdDateTo] = useState("");
@@ -154,9 +154,15 @@ export default function PurchasesPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!quantity || !totalPrice) return;
-    if (Number(quantity) <= 0) return;
-    if (Number(totalPrice) < 0) return;
+    if (isProduction) {
+      if (!prodBatches || !prodTotalCost) return;
+      if (Number(prodBatches) <= 0) return;
+      if (Number(prodTotalCost) < 0) return;
+    } else {
+      if (!quantity || !totalPrice) return;
+      if (Number(quantity) <= 0) return;
+      if (Number(totalPrice) < 0) return;
+    }
 
     if (editing) {
       await updatePurchase.mutateAsync({
@@ -168,8 +174,8 @@ export default function PurchasesPage() {
       if (!subRecipeId) return;
       await produceSubRecipe.mutateAsync({
         recipe_id: subRecipeId,
-        batches: Number(quantity),
-        total_cost: Number(totalPrice),
+        batches: Number(prodBatches),
+        total_cost: Number(prodTotalCost),
         date,
       });
       setSubRecipeId("");
@@ -240,22 +246,22 @@ export default function PurchasesPage() {
       const q = prodSearch.toLowerCase();
       rows = rows.filter((p: any) => (p.recipe?.name ?? "").toLowerCase().includes(q));
     }
-    if (prodFilterDateFrom) {
-      const from = new Date(prodFilterDateFrom);
+    if (prodFrom) {
+      const from = new Date(prodFrom);
       from.setHours(0, 0, 0, 0);
       rows = rows.filter((p: any) => new Date(p.created_at) >= from);
     }
-    if (prodFilterDateTo) {
-      const to = new Date(prodFilterDateTo);
+    if (prodTo) {
+      const to = new Date(prodTo);
       to.setHours(23, 59, 59, 999);
       rows = rows.filter((p: any) => new Date(p.created_at) <= to);
     }
     return [...rows].sort((a: any, b: any) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-  }, [productions, prodSearch, prodFilterDateFrom, prodFilterDateTo]);
+  }, [productions, prodSearch, prodFrom, prodTo]);
 
-  const hasProdFilters = prodSearch || prodFilterDateFrom || prodFilterDateTo;
+  const hasProdFilters = prodSearch || prodFrom || prodTo;
 
   return (
     <AppLayout
@@ -618,8 +624,8 @@ export default function PurchasesPage() {
                     </button>
                     <button
                       onClick={() => {
-                        setProdFilterDateFrom(pendingProdDateFrom);
-                        setProdFilterDateTo(pendingProdDateTo);
+                        setProdFrom(pendingProdDateFrom);
+                        setProdTo(pendingProdDateTo);
                         setProdFilterSheetOpen(false);
                       }}
                       className="flex-1 h-9 rounded-lg bg-[#A05035] text-sm text-white font-medium hover:bg-[#8B4530] transition-colors"
@@ -661,18 +667,18 @@ export default function PurchasesPage() {
                         )}
                       </div>
                       <button
-                        onClick={() => { setPendingProdDateFrom(prodFilterDateFrom); setPendingProdDateTo(prodFilterDateTo); setProdFilterSheetOpen(true); }}
+                        onClick={() => { setPendingProdDateFrom(prodFrom); setPendingProdDateTo(prodTo); setProdFilterSheetOpen(true); }}
                         className={`relative h-9 px-3 rounded-lg border text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                          (prodFilterDateFrom || prodFilterDateTo)
+                          (prodFrom || prodTo)
                             ? "border-[#A05035] bg-[#A05035]/10 text-[#A05035]"
                             : "border-[#D9CCAF] bg-[#FBF8F2] text-[#7C6352] hover:bg-[#EDE4CF]"
                         }`}
                       >
                         <Filter className="w-3.5 h-3.5" />
                         Filter
-                        {(prodFilterDateFrom || prodFilterDateTo) && (
+                        {(prodFrom || prodTo) && (
                           <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#A05035] text-white text-[10px] flex items-center justify-center font-bold">
-                            {[prodFilterDateFrom, prodFilterDateTo].filter(Boolean).length}
+                            {[prodFrom, prodTo].filter(Boolean).length}
                           </span>
                         )}
                       </button>
@@ -681,7 +687,7 @@ export default function PurchasesPage() {
                       <span>{filteredProductions.length} results{(productions?.length ?? 0) > filteredProductions.length && ` of ${productions?.length}`}</span>
                       {hasProdFilters && (
                         <button
-                          onClick={() => { setProdSearch(""); setProdFilterDateFrom(""); setProdFilterDateTo(""); setPendingProdDateFrom(""); setPendingProdDateTo(""); }}
+                          onClick={() => { setProdSearch(""); setProdFrom(""); setProdTo(""); setPendingProdDateFrom(""); setPendingProdDateTo(""); }}
                           className="text-[#A05035] hover:underline font-medium"
                         >
                           Reset all
@@ -812,30 +818,29 @@ export default function PurchasesPage() {
             type="number"
             min="0.01"
             step="0.01"
-            value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
+            value={isProduction ? prodBatches : quantity}
+            onChange={(e) => isProduction ? setProdBatches(e.target.value) : setQuantity(e.target.value)}
             required
           />
           <Input
             label={isProduction ? "Total Production Cost ($)" : "Total Price ($)"}
             type="number"
             min="0"
-            value={totalPrice}
-            onChange={(e) => setTotalPrice(e.target.value)}
+            value={isProduction ? prodTotalCost : totalPrice}
+            onChange={(e) => isProduction ? setProdTotalCost(e.target.value) : setTotalPrice(e.target.value)}
             required
           />
           {isProduction && subRecipeId && (() => {
             const sr = (subRecipes ?? []).find((r) => r.id === subRecipeId);
             if (!sr) return null;
-            const hppPerUnit = sr.hpp;
-            const suggestedCost = hppPerUnit * (Number(quantity) || 1);
+            const costPerUnit =
+              Number(prodTotalCost) > 0 && Number(prodBatches) > 0
+                ? (Number(prodTotalCost) / Number(prodBatches)).toFixed(2)
+                : "—";
             return (
               <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5">
                 <p className="text-xs text-amber-700 font-medium">
-                  HPP per {sr.unit}: <span className="font-bold">{formatCurrency(hppPerUnit)}</span>
-                  {quantity && (
-                    <> · Estimated cost: <span className="font-bold">{formatCurrency(suggestedCost)}</span></>
-                  )}
+                  Cost per unit: <span className="font-bold">{costPerUnit}</span>
                 </p>
               </div>
             );
@@ -898,7 +903,7 @@ export default function PurchasesPage() {
             e.preventDefault();
             if (!editingProduction) return;
             await updateProduction.mutateAsync({
-              id: editingProduction.id,
+              production_id: editingProduction.id,
               batches: Number(prodBatches),
               total_cost: Number(prodTotalCost),
             });
