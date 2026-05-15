@@ -153,7 +153,7 @@ SET search_path = public
 AS $$
 BEGIN
   UPDATE public.recipes
-     SET stock = stock - p_quantity
+     SET stock = GREATEST(0, stock - p_quantity)
    WHERE id = p_recipe_id AND user_id = p_user_id;
 END;
 $$;
