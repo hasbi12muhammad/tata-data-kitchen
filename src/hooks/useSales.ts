@@ -124,13 +124,15 @@ export function useCreateSale() {
       hpp_at_sale: number;
       category_id?: string | null;
       date?: string;
+      sub_recipe_deductions?: Array<{
+        sub_recipe_id: string;
+        quantity: number;
+      }>;
     }) => {
       const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       const profit = p.selling_price - p.hpp_at_sale;
-      const { date, ...rest } = p;
+      const { date, sub_recipe_deductions, ...rest } = p;
       const { error } = await supabase.from("sales").insert({
         ...rest,
         profit,
@@ -138,10 +140,22 @@ export function useCreateSale() {
         ...(date ? { created_at: new Date(date).toISOString() } : {}),
       });
       if (error) throw error;
+
+      if (sub_recipe_deductions?.length) {
+        for (const d of sub_recipe_deductions) {
+          const { error: deductError } = await supabase.rpc("deduct_sub_recipe_stock", {
+            p_user_id: user!.id,
+            p_recipe_id: d.sub_recipe_id,
+            p_quantity: d.quantity,
+          });
+          if (deductError) throw deductError;
+        }
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["sales"] });
       qc.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      qc.invalidateQueries({ queryKey: ["recipes"] });
       toast.success("Sale recorded");
     },
     onError: (e: Error) => toast.error(e.message),
