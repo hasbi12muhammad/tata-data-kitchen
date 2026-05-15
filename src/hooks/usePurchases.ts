@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient } from "@/lib/supabase/client";
-import { Purchase } from "@/types";
+import { Purchase, Production } from "@/types";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
@@ -108,6 +108,99 @@ export function useDeletePurchase() {
       qc.invalidateQueries({ queryKey: ["items"] });
       qc.invalidateQueries({ queryKey: ["recipes"] });
       toast.success("Purchase deleted");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useProductions() {
+  return useQuery<Production[]>({
+    queryKey: ["productions"],
+    queryFn: async (): Promise<Production[]> => {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("productions")
+        .select("*, recipe:recipes(name, unit)")
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function useProduceSubRecipe() {
+  const qc = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (p: {
+      recipe_id: string;
+      batches: number;
+      total_cost: number;
+      date?: string;
+    }) => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.rpc("produce_sub_recipe", {
+        p_user_id: user!.id,
+        p_recipe_id: p.recipe_id,
+        p_batches: p.batches,
+        p_total_cost: p.total_cost,
+        ...(p.date ? { p_created_at: new Date(p.date).toISOString() } : {}),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["productions"] });
+      qc.invalidateQueries({ queryKey: ["items"] });
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+      toast.success("Production recorded");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useDeleteProduction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.rpc("delete_production", {
+        p_production_id: id,
+        p_user_id: user!.id,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["productions"] });
+      qc.invalidateQueries({ queryKey: ["items"] });
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+      toast.success("Production deleted");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+export function useUpdateProduction() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (p: { id: string; batches: number; total_cost: number }) => {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.rpc("update_production", {
+        p_production_id: p.id,
+        p_user_id: user!.id,
+        p_batches: p.batches,
+        p_total_cost: p.total_cost,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["productions"] });
+      qc.invalidateQueries({ queryKey: ["items"] });
+      qc.invalidateQueries({ queryKey: ["recipes"] });
+      toast.success("Production updated");
     },
     onError: (e: Error) => toast.error(e.message),
   });
