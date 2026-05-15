@@ -134,6 +134,8 @@ export default function PurchasesPage() {
     setQuantity("");
     setTotalPrice("");
     setDate(new Date().toISOString().slice(0, 10));
+    setProdBatches("");
+    setProdTotalCost("");
     setIsProduction(false);
     setSubRecipeId("");
     setModalOpen(true);
@@ -883,7 +885,7 @@ export default function PurchasesPage() {
             </Button>
             <Button
               type="submit"
-              loading={createPurchase.isPending || updatePurchase.isPending}
+              loading={createPurchase.isPending || updatePurchase.isPending || produceSubRecipe.isPending}
               className="flex-1"
             >
               {editing ? "Save" : "Record"}
@@ -903,7 +905,7 @@ export default function PurchasesPage() {
             e.preventDefault();
             if (!editingProduction) return;
             await updateProduction.mutateAsync({
-              production_id: editingProduction.id,
+              id: editingProduction.id,
               batches: Number(prodBatches),
               total_cost: Number(prodTotalCost),
             });
