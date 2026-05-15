@@ -26,6 +26,10 @@ export interface Recipe {
   name: string;
   hpp: number;
   prev_hpp: number;
+  is_ingredient: boolean;
+  unit?: "gr" | "ml" | "pcs" | "kg" | "liter";
+  stock: number;
+  avg_price: number;
   created_at: string;
   recipe_items?: RecipeItem[];
 }
@@ -33,9 +37,21 @@ export interface Recipe {
 export interface RecipeItem {
   id: string;
   recipe_id: string;
-  item_id: string;
+  item_id?: string | null;
+  sub_recipe_id?: string | null;
   quantity_used: number;
   item?: Item;
+  sub_recipe?: Recipe;
+}
+
+export interface Production {
+  id: string;
+  user_id: string;
+  recipe_id: string;
+  batches: number;
+  total_cost: number;
+  created_at: string;
+  recipe?: Recipe;
 }
 
 export interface SaleCategory {
