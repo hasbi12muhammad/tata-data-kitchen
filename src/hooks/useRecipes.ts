@@ -6,6 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 export function calcHPP(items: RecipeItem[], usePrev: boolean): number {
+  // Max sub-recipe depth: 1 (query only fetches one level of sub_recipe data)
   return items.reduce((sum, ri) => {
     if (ri.sub_recipe_id && ri.sub_recipe) {
       const subItems = ri.sub_recipe.recipe_items ?? [];
@@ -14,7 +15,7 @@ export function calcHPP(items: RecipeItem[], usePrev: boolean): number {
     }
     const item = ri.item;
     const price = usePrev
-      ? (item?.prev_avg_price || item?.avg_price || 0)
+      ? (item?.prev_avg_price ?? item?.avg_price ?? 0)
       : (item?.avg_price ?? 0);
     return sum + price * ri.quantity_used;
   }, 0);
@@ -61,7 +62,7 @@ export function useCreateRecipe() {
     mutationFn: async (payload: {
       name: string;
       is_ingredient?: boolean;
-      unit?: string | null;
+      unit?: Recipe["unit"] | null;
       items: Array<{
         item_id?: string | null;
         sub_recipe_id?: string | null;
@@ -108,7 +109,7 @@ export function useUpdateRecipe() {
       id: string;
       name: string;
       is_ingredient?: boolean;
-      unit?: string | null;
+      unit?: Recipe["unit"] | null;
       items: Array<{
         item_id?: string | null;
         sub_recipe_id?: string | null;
