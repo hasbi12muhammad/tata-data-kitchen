@@ -113,6 +113,12 @@ export default function SalesPage() {
       });
     } else {
       if (!recipeId) return;
+      const sub_recipe_deductions = (selectedRecipe?.recipe_items ?? [])
+        .filter((ri) => ri.sub_recipe_id)
+        .map((ri) => ({
+          sub_recipe_id: ri.sub_recipe_id!,
+          quantity: ri.quantity_used * Number(quantity),
+        }));
       await createSale.mutateAsync({
         recipe_id: recipeId,
         quantity_sold: Number(quantity),
@@ -120,6 +126,7 @@ export default function SalesPage() {
         hpp_at_sale: hpp,
         category_id: categoryId || null,
         date,
+        sub_recipe_deductions,
       });
     }
     closeModal();
