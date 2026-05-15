@@ -14,8 +14,13 @@ import {
   useDeletePurchase,
   usePurchases,
   useUpdatePurchase,
+  useProduceSubRecipe,
+  useProductions,
+  useDeleteProduction,
+  useUpdateProduction,
 } from "@/hooks/usePurchases";
-import { Purchase } from "@/types";
+import { useRecipes } from "@/hooks/useRecipes";
+import { Purchase, Production } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
@@ -33,6 +38,11 @@ export default function PurchasesPage() {
   const createPurchase = useCreatePurchase();
   const updatePurchase = useUpdatePurchase();
   const deletePurchase = useDeletePurchase();
+  const { data: subRecipes } = useRecipes();
+  const produceSubRecipe = useProduceSubRecipe();
+  const { data: productions } = useProductions();
+  const deleteProduction = useDeleteProduction();
+  const updateProduction = useUpdateProduction();
   const queryClient = useQueryClient();
 
   const [importOpen, setImportOpen] = useState(false);
@@ -85,6 +95,20 @@ export default function PurchasesPage() {
   const [totalPrice, setTotalPrice] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
 
+  const [editingProduction, setEditingProduction] = useState<Production | null>(null);
+  const [prodBatches, setProdBatches] = useState("");
+  const [prodTotalCost, setProdTotalCost] = useState("");
+  const [activeTab, setActiveTab] = useState<"purchases" | "productions">("purchases");
+  const [isProduction, setIsProduction] = useState(false);
+  const [subRecipeId, setSubRecipeId] = useState("");
+
+  const [prodSearch, setProdSearch] = useState("");
+  const [prodFilterDateFrom, setProdFilterDateFrom] = useState("");
+  const [prodFilterDateTo, setProdFilterDateTo] = useState("");
+  const [prodFilterSheetOpen, setProdFilterSheetOpen] = useState(false);
+  const [pendingProdDateFrom, setPendingProdDateFrom] = useState("");
+  const [pendingProdDateTo, setPendingProdDateTo] = useState("");
+
   const [search, setSearch] = useState("");
   const [filterItem, setFilterItem] = useState("");
   const [sortBy, setSortBy] = useState("date_desc");
@@ -110,6 +134,8 @@ export default function PurchasesPage() {
     setQuantity("");
     setTotalPrice("");
     setDate(new Date().toISOString().slice(0, 10));
+    setIsProduction(false);
+    setSubRecipeId("");
     setModalOpen(true);
   }
 
@@ -131,12 +157,23 @@ export default function PurchasesPage() {
     if (!quantity || !totalPrice) return;
     if (Number(quantity) <= 0) return;
     if (Number(totalPrice) < 0) return;
+
     if (editing) {
       await updatePurchase.mutateAsync({
         id: editing.id,
         quantity: Number(quantity),
         total_price: Number(totalPrice),
       });
+    } else if (isProduction) {
+      if (!subRecipeId) return;
+      await produceSubRecipe.mutateAsync({
+        recipe_id: subRecipeId,
+        batches: Number(quantity),
+        total_cost: Number(totalPrice),
+        date,
+      });
+      setSubRecipeId("");
+      setIsProduction(false);
     } else {
       if (!itemId) return;
       await createPurchase.mutateAsync({
@@ -197,6 +234,29 @@ export default function PurchasesPage() {
 
   const hasFilters = search || filterItem || sortBy !== "date_desc" || filterDateFrom || filterDateTo;
 
+  const filteredProductions = useMemo(() => {
+    let rows = productions ?? [];
+    if (prodSearch) {
+      const q = prodSearch.toLowerCase();
+      rows = rows.filter((p: any) => (p.recipe?.name ?? "").toLowerCase().includes(q));
+    }
+    if (prodFilterDateFrom) {
+      const from = new Date(prodFilterDateFrom);
+      from.setHours(0, 0, 0, 0);
+      rows = rows.filter((p: any) => new Date(p.created_at) >= from);
+    }
+    if (prodFilterDateTo) {
+      const to = new Date(prodFilterDateTo);
+      to.setHours(23, 59, 59, 999);
+      rows = rows.filter((p: any) => new Date(p.created_at) <= to);
+    }
+    return [...rows].sort((a: any, b: any) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [productions, prodSearch, prodFilterDateFrom, prodFilterDateTo]);
+
+  const hasProdFilters = prodSearch || prodFilterDateFrom || prodFilterDateTo;
+
   return (
     <AppLayout
       title="Purchases"
@@ -218,6 +278,31 @@ export default function PurchasesPage() {
       }
     >
       <Card>
+        {/* Tab switcher */}
+        <div className="flex border-b border-[#E5DACA]">
+          <button
+            onClick={() => setActiveTab("purchases")}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              activeTab === "purchases"
+                ? "text-[#A05035] border-b-2 border-[#A05035]"
+                : "text-[#7C6352] hover:text-[#2C1810]"
+            }`}
+          >
+            Purchases {purchases?.length ? `(${purchases.length})` : ""}
+          </button>
+          <button
+            onClick={() => setActiveTab("productions")}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              activeTab === "productions"
+                ? "text-amber-600 border-b-2 border-amber-600"
+                : "text-[#7C6352] hover:text-[#2C1810]"
+            }`}
+          >
+            Productions {productions?.length ? `(${productions.length})` : ""}
+          </button>
+        </div>
+
+        {activeTab === "purchases" && (<>
         {/* Filter bottom sheet */}
         {filterSheetOpen && (
           <>
@@ -487,6 +572,161 @@ export default function PurchasesPage() {
             </>
           )}
         </CardBody>
+        </>)}
+
+        {activeTab === "productions" && (
+          <>
+            {/* Production filter bottom sheet */}
+            {prodFilterSheetOpen && (
+              <>
+                <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setProdFilterSheetOpen(false)} />
+                <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#FBF8F2] rounded-t-2xl shadow-xl p-5 space-y-4 max-h-[80vh] overflow-y-auto">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-[#2C1810]">Filter Productions</span>
+                    <button onClick={() => setProdFilterSheetOpen(false)} className="text-[#B88D6A] hover:text-[#7C6352]">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-[#7C6352] mb-1 block">From date</label>
+                      <input
+                        type="date"
+                        className={`${cls} w-full`}
+                        value={pendingProdDateFrom}
+                        onChange={(e) => setPendingProdDateFrom(e.target.value)}
+                        max={pendingProdDateTo || undefined}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-[#7C6352] mb-1 block">To date</label>
+                      <input
+                        type="date"
+                        className={`${cls} w-full`}
+                        value={pendingProdDateTo}
+                        onChange={(e) => setPendingProdDateTo(e.target.value)}
+                        min={pendingProdDateFrom || undefined}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={() => { setPendingProdDateFrom(""); setPendingProdDateTo(""); }}
+                      className="flex-1 h-9 rounded-lg border border-[#D9CCAF] text-sm text-[#7C6352] font-medium hover:bg-[#EDE4CF] transition-colors"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      onClick={() => {
+                        setProdFilterDateFrom(pendingProdDateFrom);
+                        setProdFilterDateTo(pendingProdDateTo);
+                        setProdFilterSheetOpen(false);
+                      }}
+                      className="flex-1 h-9 rounded-lg bg-[#A05035] text-sm text-white font-medium hover:bg-[#8B4530] transition-colors"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+            <CardBody className="p-0">
+              {!(productions ?? []).length ? (
+                <EmptyState
+                  icon={ShoppingCart}
+                  title="No productions yet"
+                  description="Record semi-finished good production runs here."
+                  action={
+                    <Button size="sm" onClick={() => { setIsProduction(true); setModalOpen(true); }}>
+                      <Plus className="w-4 h-4" /> Record Production
+                    </Button>
+                  }
+                />
+              ) : (
+                <>
+                  <div className="px-4 py-3 border-b border-[#E5DACA] space-y-2">
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#B88D6A]" />
+                        <input
+                          className={`${cls} w-full pl-8`}
+                          placeholder="Search products..."
+                          value={prodSearch}
+                          onChange={(e) => setProdSearch(e.target.value)}
+                        />
+                        {prodSearch && (
+                          <button onClick={() => setProdSearch("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#B88D6A] hover:text-[#7C6352]">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => { setPendingProdDateFrom(prodFilterDateFrom); setPendingProdDateTo(prodFilterDateTo); setProdFilterSheetOpen(true); }}
+                        className={`relative h-9 px-3 rounded-lg border text-sm font-medium transition-colors flex items-center gap-1.5 ${
+                          (prodFilterDateFrom || prodFilterDateTo)
+                            ? "border-[#A05035] bg-[#A05035]/10 text-[#A05035]"
+                            : "border-[#D9CCAF] bg-[#FBF8F2] text-[#7C6352] hover:bg-[#EDE4CF]"
+                        }`}
+                      >
+                        <Filter className="w-3.5 h-3.5" />
+                        Filter
+                        {(prodFilterDateFrom || prodFilterDateTo) && (
+                          <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-[#A05035] text-white text-[10px] flex items-center justify-center font-bold">
+                            {[prodFilterDateFrom, prodFilterDateTo].filter(Boolean).length}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-[#B88D6A]">
+                      <span>{filteredProductions.length} results{(productions?.length ?? 0) > filteredProductions.length && ` of ${productions?.length}`}</span>
+                      {hasProdFilters && (
+                        <button
+                          onClick={() => { setProdSearch(""); setProdFilterDateFrom(""); setProdFilterDateTo(""); setPendingProdDateFrom(""); setPendingProdDateTo(""); }}
+                          className="text-[#A05035] hover:underline font-medium"
+                        >
+                          Reset all
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="divide-y divide-[#EDE4CF]">
+                    {filteredProductions.length === 0 ? (
+                      <div className="py-10 text-center text-sm text-[#B88D6A]">No results for this filter</div>
+                    ) : filteredProductions.map((prod: any) => (
+                      <div key={prod.id} className="flex items-center justify-between px-4 py-3 hover:bg-[#F5EFE0] transition-colors gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-[#2C1810]">{prod.recipe?.name ?? "—"}</p>
+                          <span className="text-xs text-[#B88D6A]">
+                            {prod.batches} {prod.recipe?.unit} · {format(new Date(prod.created_at), "dd MMM yyyy")}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-sm font-semibold text-amber-700 tabular-nums">
+                            {formatCurrency(prod.total_cost)}
+                          </span>
+                          <button
+                            onClick={() => { setEditingProduction(prod); setProdBatches(String(prod.batches)); setProdTotalCost(String(prod.total_cost)); }}
+                            className="p-1.5 rounded-lg text-[#B88D6A] hover:text-[#A05035] hover:bg-[#EDE4CF] transition-colors"
+                            aria-label="Edit"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => { if (confirm("Delete this production run?")) deleteProduction.mutate(prod.id); }}
+                            className="p-1.5 rounded-lg text-[#B88D6A] hover:text-red-500 hover:bg-red-50 transition-colors"
+                            aria-label="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </CardBody>
+          </>
+        )}
       </Card>
 
       <Modal
@@ -507,22 +747,68 @@ export default function PurchasesPage() {
               </p>
             </div>
           ) : (
-            <Select
-              label="Item"
-              value={itemId}
-              onChange={(e) => setItemId(e.target.value)}
-              required
-            >
-              <option value="">Select item...</option>
-              {items?.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name} ({i.unit})
-                </option>
-              ))}
-            </Select>
+            <>
+              {/* Toggle purchase vs production */}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => { setIsProduction(false); setSubRecipeId(""); setItemId(""); }}
+                  className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                    !isProduction
+                      ? "bg-[#A05035] text-white border-[#A05035]"
+                      : "bg-[#FBF8F2] text-[#7C6352] border-[#D9CCAF]"
+                  }`}
+                >
+                  Purchase
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setIsProduction(true); setItemId(""); }}
+                  className={`flex-1 py-1.5 rounded-lg text-sm font-medium border transition-colors ${
+                    isProduction
+                      ? "bg-amber-600 text-white border-amber-600"
+                      : "bg-[#FBF8F2] text-[#7C6352] border-[#D9CCAF]"
+                  }`}
+                >
+                  Production
+                </button>
+              </div>
+
+              {!isProduction ? (
+                <Select
+                  label="Item"
+                  value={itemId}
+                  onChange={(e) => setItemId(e.target.value)}
+                  required
+                >
+                  <option value="">Select item...</option>
+                  {items?.map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name} ({i.unit})
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <Select
+                  label="Semi-Finished Good"
+                  value={subRecipeId}
+                  onChange={(e) => setSubRecipeId(e.target.value)}
+                  required
+                >
+                  <option value="">Select product...</option>
+                  {(subRecipes ?? [])
+                    .filter((r) => r.is_ingredient)
+                    .map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.name} ({r.unit})
+                      </option>
+                    ))}
+                </Select>
+              )}
+            </>
           )}
           <Input
-            label="Quantity"
+            label={isProduction ? "Batches Produced" : "Quantity"}
             type="number"
             min="0.01"
             step="0.01"
@@ -531,13 +817,29 @@ export default function PurchasesPage() {
             required
           />
           <Input
-            label="Total Price ($)"
+            label={isProduction ? "Total Production Cost ($)" : "Total Price ($)"}
             type="number"
             min="0"
             value={totalPrice}
             onChange={(e) => setTotalPrice(e.target.value)}
             required
           />
+          {isProduction && subRecipeId && (() => {
+            const sr = (subRecipes ?? []).find((r) => r.id === subRecipeId);
+            if (!sr) return null;
+            const hppPerUnit = sr.hpp;
+            const suggestedCost = hppPerUnit * (Number(quantity) || 1);
+            return (
+              <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5">
+                <p className="text-xs text-amber-700 font-medium">
+                  HPP per {sr.unit}: <span className="font-bold">{formatCurrency(hppPerUnit)}</span>
+                  {quantity && (
+                    <> · Estimated cost: <span className="font-bold">{formatCurrency(suggestedCost)}</span></>
+                  )}
+                </p>
+              </div>
+            );
+          })()}
           <div>
             <label className="block text-sm font-medium text-[#4A3728] mb-1">Transaction Date</label>
             <input
@@ -580,6 +882,60 @@ export default function PurchasesPage() {
               className="flex-1"
             >
               {editing ? "Save" : "Record"}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal
+        open={!!editingProduction}
+        onClose={() => setEditingProduction(null)}
+        title="Edit Production"
+        size="sm"
+      >
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (!editingProduction) return;
+            await updateProduction.mutateAsync({
+              id: editingProduction.id,
+              batches: Number(prodBatches),
+              total_cost: Number(prodTotalCost),
+            });
+            setEditingProduction(null);
+          }}
+          className="flex flex-col gap-4"
+        >
+          <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5">
+            <p className="text-xs text-amber-700">Product</p>
+            <p className="text-sm font-medium text-[#2C1810]">
+              {(editingProduction?.recipe as any)?.name ?? "—"}{" "}
+              <span className="text-xs text-[#B88D6A]">({(editingProduction?.recipe as any)?.unit})</span>
+            </p>
+          </div>
+          <Input
+            label="Batches"
+            type="number"
+            min="0.01"
+            step="0.01"
+            value={prodBatches}
+            onChange={(e) => setProdBatches(e.target.value)}
+            required
+          />
+          <Input
+            label="Total Cost ($)"
+            type="number"
+            min="0"
+            value={prodTotalCost}
+            onChange={(e) => setProdTotalCost(e.target.value)}
+            required
+          />
+          <div className="flex gap-2 pt-1">
+            <Button type="button" variant="ghost" onClick={() => setEditingProduction(null)} className="flex-1">
+              Cancel
+            </Button>
+            <Button type="submit" loading={updateProduction.isPending} className="flex-1">
+              Save
             </Button>
           </div>
         </form>
