@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { Input, Select } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { useItems } from "@/hooks/useItems";
+import { usePackagingTypes, useCreatePackagingType } from "@/hooks/usePackagingTypes";
 import {
   useCreatePurchase,
   useDeletePurchase,
@@ -44,6 +45,8 @@ export default function PurchasesPage() {
   const deleteProduction = useDeleteProduction();
   const updateProduction = useUpdateProduction();
   const queryClient = useQueryClient();
+  const { data: packagingTypes = [] } = usePackagingTypes();
+  const createPkgType = useCreatePackagingType();
 
   const [importOpen, setImportOpen] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -92,8 +95,14 @@ export default function PurchasesPage() {
   const [editing, setEditing] = useState<Purchase | null>(null);
   const [itemId, setItemId] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [totalPrice, setTotalPrice] = useState("");
+  const [pricePerUnit, setPricePerUnit] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [usePkg, setUsePkg] = useState(false);
+  const [pkgTypeId, setPkgTypeId] = useState("");
+  const [pkgQty, setPkgQty] = useState("");
+  const [sizePerPkg, setSizePerPkg] = useState("");
+  const [addingPkgType, setAddingPkgType] = useState(false);
+  const [newPkgTypeName, setNewPkgTypeName] = useState("");
 
   const [editingProduction, setEditingProduction] = useState<Production | null>(null);
   const [prodBatches, setProdBatches] = useState("");
@@ -123,7 +132,12 @@ export default function PurchasesPage() {
   function openEdit(p: Purchase) {
     setEditing(p);
     setQuantity(String(p.quantity));
-    setTotalPrice(String(p.total_price));
+    setPricePerUnit(String(p.price_per_unit));
+    setUsePkg(!!(p as any).pkg_type_id);
+    setPkgTypeId((p as any).pkg_type_id ?? "");
+    setPkgQty((p as any).pkg_qty ? String((p as any).pkg_qty) : "");
+    setSizePerPkg((p as any).size_per_pkg ? String((p as any).size_per_pkg) : "");
+    setAddingPkgType(false);
     setDate(new Date(p.created_at).toISOString().slice(0, 10));
     setModalOpen(true);
   }
@@ -132,7 +146,12 @@ export default function PurchasesPage() {
     setEditing(null);
     setItemId("");
     setQuantity("");
-    setTotalPrice("");
+    setPricePerUnit("");
+    setUsePkg(false);
+    setPkgTypeId("");
+    setPkgQty("");
+    setSizePerPkg("");
+    setAddingPkgType(false);
     setDate(new Date().toISOString().slice(0, 10));
     setProdBatches("");
     setProdTotalCost("");
@@ -145,14 +164,22 @@ export default function PurchasesPage() {
     ? items?.find((i) => i.id === editing.item_id)
     : items?.find((i) => i.id === itemId);
 
-  const pricePerUnit =
-    quantity && totalPrice && Number(quantity) > 0
-      ? Number(totalPrice) / Number(quantity)
+  const effectiveQty = usePkg && pkgQty && sizePerPkg
+    ? Number(pkgQty) * Number(sizePerPkg)
+    : Number(quantity);
+
+  const computedTotal =
+    effectiveQty > 0 && Number(pricePerUnit) > 0
+      ? effectiveQty * Number(pricePerUnit)
       : 0;
 
   const avgPrice = selectedItem?.avg_price ?? 0;
-  const priceDiff = pricePerUnit > 0 && avgPrice > 0 ? pricePerUnit - avgPrice : null;
-  const pricePct = priceDiff !== null ? (priceDiff / avgPrice) * 100 : null;
+  const priceDiff =
+    Number(pricePerUnit) > 0 && avgPrice > 0
+      ? Number(pricePerUnit) - avgPrice
+      : null;
+  const pricePct =
+    priceDiff !== null ? (priceDiff / avgPrice) * 100 : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -161,16 +188,26 @@ export default function PurchasesPage() {
       if (Number(prodBatches) <= 0) return;
       if (Number(prodTotalCost) < 0) return;
     } else {
-      if (!quantity || !totalPrice) return;
-      if (Number(quantity) <= 0) return;
-      if (Number(totalPrice) < 0) return;
+      if (!pricePerUnit || Number(pricePerUnit) <= 0) return;
+      if (usePkg) {
+        if (!pkgQty || !sizePerPkg) return;
+        if (Number(pkgQty) <= 0 || Number(sizePerPkg) <= 0) return;
+      } else {
+        if (!quantity || Number(quantity) <= 0) return;
+      }
     }
 
     if (editing) {
+      const finalQtyEdit = usePkg
+        ? Number(pkgQty) * Number(sizePerPkg)
+        : Number(quantity);
       await updatePurchase.mutateAsync({
         id: editing.id,
-        quantity: Number(quantity),
-        price_per_unit: Number(quantity) > 0 ? Number(totalPrice) / Number(quantity) : 0,
+        quantity: finalQtyEdit,
+        price_per_unit: Number(pricePerUnit),
+        pkg_type_id: usePkg ? pkgTypeId || null : null,
+        pkg_qty: usePkg ? Number(pkgQty) : null,
+        size_per_pkg: usePkg ? Number(sizePerPkg) : null,
       });
     } else if (isProduction) {
       if (!subRecipeId) return;
@@ -184,18 +221,29 @@ export default function PurchasesPage() {
       setIsProduction(false);
     } else {
       if (!itemId) return;
+      const finalQty = usePkg
+        ? Number(pkgQty) * Number(sizePerPkg)
+        : Number(quantity);
       await createPurchase.mutateAsync({
         item_id: itemId,
-        quantity: Number(quantity),
-        price_per_unit: Number(quantity) > 0 ? Number(totalPrice) / Number(quantity) : 0,
+        quantity: finalQty,
+        price_per_unit: Number(pricePerUnit),
         date,
+        pkg_type_id: usePkg ? pkgTypeId || null : null,
+        pkg_qty: usePkg ? Number(pkgQty) : null,
+        size_per_pkg: usePkg ? Number(sizePerPkg) : null,
       });
     }
     setModalOpen(false);
     setEditing(null);
     setItemId("");
     setQuantity("");
-    setTotalPrice("");
+    setPricePerUnit("");
+    setUsePkg(false);
+    setPkgTypeId("");
+    setPkgQty("");
+    setSizePerPkg("");
+    setAddingPkgType(false);
     setDate(new Date().toISOString().slice(0, 10));
   }
 
@@ -509,6 +557,11 @@ export default function PurchasesPage() {
                         <span className="text-[10px] text-[#B88D6A]">·</span>
                         <span className="text-[10px] text-[#B88D6A]">{formatCurrency(p.price_per_unit)}/unit</span>
                       </div>
+                      {(p as any).pkg_type && (
+                        <p className="text-[10px] text-[#A05035] mt-0.5">
+                          {(p as any).pkg_qty} {(p as any).pkg_type.name} × {(p as any).size_per_pkg} {(p.item as any)?.unit}
+                        </p>
+                      )}
                       <p className="text-[10px] text-[#B88D6A] mt-0.5">
                         {format(new Date(p.created_at), "dd MMM yyyy")}
                       </p>
@@ -557,6 +610,11 @@ export default function PurchasesPage() {
                         <td className="px-6 py-3 font-medium text-[#2C1810]">
                           <span className="line-clamp-1 text-sm">{(p.item as any)?.name ?? "—"}</span>
                           <span className="text-[10px] text-[#B88D6A]">{(p.item as any)?.unit}</span>
+                          {(p as any).pkg_type && (
+                            <span className="block text-[10px] text-[#A05035]">
+                              {(p as any).pkg_qty} {(p as any).pkg_type.name} × {(p as any).size_per_pkg} {(p.item as any)?.unit}
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-3 text-right tabular-nums text-[#5C4535] text-sm">{p.quantity}</td>
                         <td className="px-6 py-3 text-right tabular-nums font-medium text-[#2C1810] text-sm whitespace-nowrap">{formatCurrency(p.total_price)}</td>
@@ -815,23 +873,176 @@ export default function PurchasesPage() {
               )}
             </>
           )}
-          <Input
-            label={isProduction ? "Batches Produced" : "Quantity"}
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={isProduction ? prodBatches : quantity}
-            onChange={(e) => isProduction ? setProdBatches(e.target.value) : setQuantity(e.target.value)}
-            required
-          />
-          <Input
-            label={isProduction ? "Total Production Cost ($)" : "Total Price ($)"}
-            type="number"
-            min="0"
-            value={isProduction ? prodTotalCost : totalPrice}
-            onChange={(e) => isProduction ? setProdTotalCost(e.target.value) : setTotalPrice(e.target.value)}
-            required
-          />
+          {isProduction ? (
+            <>
+              <Input
+                label="Batches Produced"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={prodBatches}
+                onChange={(e) => setProdBatches(e.target.value)}
+                required
+              />
+              <Input
+                label="Total Production Cost ($)"
+                type="number"
+                min="0"
+                value={prodTotalCost}
+                onChange={(e) => setProdTotalCost(e.target.value)}
+                required
+              />
+            </>
+          ) : (
+            <>
+              {/* Packaging toggle */}
+              <div className="flex items-center gap-2">
+                <input
+                  id="usePkg"
+                  type="checkbox"
+                  checked={usePkg}
+                  onChange={(e) => {
+                    setUsePkg(e.target.checked);
+                    if (!e.target.checked) { setPkgTypeId(""); setPkgQty(""); setSizePerPkg(""); }
+                  }}
+                  className="rounded border-[#D9CCAF] text-[#A05035] focus:ring-[#A05035]"
+                />
+                <label htmlFor="usePkg" className="text-sm text-[#4A3728] cursor-pointer">
+                  Beli per kemasan?
+                </label>
+              </div>
+
+              {usePkg ? (
+                <div className="rounded-lg border border-[#D9CCAF] bg-[#F5EFE0] p-3 space-y-3">
+                  {/* Jenis kemasan */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-medium text-[#7C6352]">Jenis kemasan</label>
+                    {addingPkgType ? (
+                      <div className="flex gap-2">
+                        <input
+                          autoFocus
+                          className="h-9 rounded-lg border border-[#D9CCAF] bg-[#FBF8F2] px-3 text-sm text-[#2C1810] flex-1 focus:outline-none focus:ring-2 focus:ring-[#A05035]"
+                          placeholder="Nama kemasan baru..."
+                          value={newPkgTypeName}
+                          onChange={(e) => setNewPkgTypeName(e.target.value)}
+                          onKeyDown={async (e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              if (!newPkgTypeName.trim()) return;
+                              await createPkgType.mutateAsync(newPkgTypeName.trim());
+                              setNewPkgTypeName("");
+                              setAddingPkgType(false);
+                            }
+                            if (e.key === "Escape") { setAddingPkgType(false); setNewPkgTypeName(""); }
+                          }}
+                        />
+                        <button type="button"
+                          onClick={async () => {
+                            if (!newPkgTypeName.trim()) return;
+                            await createPkgType.mutateAsync(newPkgTypeName.trim());
+                            setNewPkgTypeName("");
+                            setAddingPkgType(false);
+                          }}
+                          disabled={!newPkgTypeName.trim() || createPkgType.isPending}
+                          className="px-3 h-9 rounded-lg bg-[#A05035] text-white text-sm disabled:opacity-50"
+                        >Tambah</button>
+                        <button type="button" onClick={() => { setAddingPkgType(false); setNewPkgTypeName(""); }}
+                          className="px-3 h-9 rounded-lg border border-[#D9CCAF] text-sm text-[#7C6352]">Batal</button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <select
+                          className="h-9 flex-1 rounded-lg border border-[#D9CCAF] bg-[#FBF8F2] px-3 text-sm text-[#2C1810] focus:outline-none focus:ring-2 focus:ring-[#A05035]"
+                          value={pkgTypeId}
+                          onChange={(e) => setPkgTypeId(e.target.value)}
+                        >
+                          <option value="">Pilih kemasan...</option>
+                          {packagingTypes.map((pt) => (
+                            <option key={pt.id} value={pt.id}>{pt.name}</option>
+                          ))}
+                        </select>
+                        <button type="button" onClick={() => setAddingPkgType(true)}
+                          className="px-3 h-9 rounded-lg border border-[#A05035] text-[#A05035] text-sm hover:bg-[#A05035]/10 transition-colors">
+                          + Tambah
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Jumlah & Isi */}
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-[#7C6352] mb-1">Jumlah kemasan</label>
+                      <input
+                        type="number" min="0.01" step="0.01"
+                        className="h-9 w-full rounded-lg border border-[#D9CCAF] bg-[#FBF8F2] px-3 text-sm text-[#2C1810] focus:outline-none focus:ring-2 focus:ring-[#A05035]"
+                        value={pkgQty}
+                        onChange={(e) => setPkgQty(e.target.value)}
+                        placeholder="5"
+                      />
+                    </div>
+                    <span className="text-[#B88D6A] pb-2">×</span>
+                    <div className="flex-1">
+                      <label className="block text-xs font-medium text-[#7C6352] mb-1">
+                        Isi per kemasan ({selectedItem?.unit ?? "unit"})
+                      </label>
+                      <input
+                        type="number" min="0.01" step="0.01"
+                        className="h-9 w-full rounded-lg border border-[#D9CCAF] bg-[#FBF8F2] px-3 text-sm text-[#2C1810] focus:outline-none focus:ring-2 focus:ring-[#A05035]"
+                        value={sizePerPkg}
+                        onChange={(e) => setSizePerPkg(e.target.value)}
+                        placeholder="1000"
+                      />
+                    </div>
+                  </div>
+
+                  {pkgQty && sizePerPkg && (
+                    <p className="text-xs text-[#5C4535]">
+                      → Total qty: <span className="font-semibold">
+                        {Number(pkgQty) * Number(sizePerPkg)} {selectedItem?.unit}
+                      </span>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <Input
+                  label={`Jumlah (${selectedItem?.unit ?? "unit"})`}
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  required
+                />
+              )}
+
+              {/* Price per unit — replaces old Total Price field */}
+              <Input
+                label={`Harga per ${selectedItem?.unit ?? "unit"}`}
+                type="number"
+                min="0"
+                step="1"
+                value={pricePerUnit}
+                onChange={(e) => setPricePerUnit(e.target.value)}
+                required
+              />
+
+              {/* Preview: computed total + avg comparison */}
+              {computedTotal > 0 && (
+                <div className="rounded-lg bg-[#737B4C]/10 border border-[#737B4C]/20 px-4 py-2.5 space-y-1">
+                  <p className="text-xs text-[#5C6B38] font-medium">
+                    Total: <span className="font-bold">{formatCurrency(computedTotal)}</span>
+                  </p>
+                  {priceDiff !== null && pricePct !== null && (
+                    <p className={`text-xs font-medium ${priceDiff > 0 ? "text-red-600" : "text-green-700"}`}>
+                      {priceDiff > 0 ? "▲" : "▼"}{" "}
+                      {formatCurrency(Math.abs(priceDiff))} ({pricePct > 0 ? "+" : ""}{pricePct.toFixed(1)}%) vs avg harga
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
           {isProduction && subRecipeId && (() => {
             const sr = (subRecipes ?? []).find((r) => r.id === subRecipeId);
             if (!sr) return null;
@@ -858,22 +1069,6 @@ export default function PurchasesPage() {
               required
             />
           </div>
-          {pricePerUnit > 0 && (
-            <div className="rounded-lg bg-[#737B4C]/10 border border-[#737B4C]/20 px-4 py-2.5 space-y-1">
-              <p className="text-xs text-[#5C6B38] font-medium">
-                Price per unit:{" "}
-                <span className="font-bold">
-                  {formatCurrency(pricePerUnit)}
-                </span>
-              </p>
-              {priceDiff !== null && pricePct !== null && (
-                <p className={`text-xs font-medium ${priceDiff > 0 ? "text-red-600" : "text-green-700"}`}>
-                  {priceDiff > 0 ? "▲" : "▼"}{" "}
-                  {formatCurrency(Math.abs(priceDiff))} ({pricePct > 0 ? "+" : ""}{pricePct.toFixed(1)}%) vs average price
-                </p>
-              )}
-            </div>
-          )}
           <div className="flex gap-2 pt-1">
             <Button
               type="button"
