@@ -6,7 +6,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { Card, CardBody } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { Input, Select } from "@/components/ui/Input";
+import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import {
   useCreateItem,
@@ -17,17 +17,18 @@ import {
 import { Item } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { ImportExcelModal } from "@/components/ui/ImportExcelModal";
+import { UnitSelect, HARDCODED_UNITS } from "@/components/ui/UnitSelect";
+import { useCustomUnits } from "@/hooks/useUnits";
 import { FileUp, Filter, Package, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
-const UNITS: Item["unit"][] = ["gr", "ml", "pcs", "kg", "liter"];
-
 const cls =
   "h-9 rounded-lg border border-[#D9CCAF] bg-[#FBF8F2] px-3 text-sm text-[#2C1810] placeholder:text-[#B88D6A] focus:outline-none focus:ring-2 focus:ring-[#A05035] focus:border-transparent";
 
 export default function ItemsPage() {
+  const { data: customUnits = [] } = useCustomUnits();
   const { data: items, isLoading } = useItems();
   const createItem = useCreateItem();
   const updateItem = useUpdateItem();
@@ -42,6 +43,10 @@ export default function ItemsPage() {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    const allUnits = [
+      ...HARDCODED_UNITS,
+      ...(customUnits?.map((u) => u.name) ?? []),
+    ];
     const valid = rows
       .map((r) => ({
         name: String(r["nama"] ?? r["name"] ?? "").trim(),
@@ -52,7 +57,7 @@ export default function ItemsPage() {
       .filter(
         (r) =>
           r.name &&
-          (["gr", "ml", "pcs", "kg", "liter"] as string[]).includes(r.unit),
+          allUnits.includes(r.unit),
       );
     if (!valid.length) {
       toast.error("No valid rows. Check the name & unit columns.");
@@ -76,7 +81,7 @@ export default function ItemsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Item | null>(null);
   const [name, setName] = useState("");
-  const [unit, setUnit] = useState<Item["unit"]>("gr");
+  const [unit, setUnit] = useState<string>("gr");
 
   const [search, setSearch] = useState("");
   const [filterUnit, setFilterUnit] = useState("");
@@ -203,8 +208,11 @@ export default function ItemsPage() {
                     onChange={(e) => setPendingFilterUnit(e.target.value)}
                   >
                     <option value="">All units</option>
-                    {UNITS.map((u) => (
+                    {HARDCODED_UNITS.map((u) => (
                       <option key={u} value={u}>{u}</option>
+                    ))}
+                    {customUnits.map((u) => (
+                      <option key={u.id} value={u.name}>{u.name}</option>
                     ))}
                   </select>
                 </div>
@@ -401,18 +409,12 @@ export default function ItemsPage() {
             required
             placeholder="e.g. All-purpose Flour"
           />
-          <Select
+          <UnitSelect
             label="Unit"
             value={unit}
-            onChange={(e) => setUnit(e.target.value as Item["unit"])}
+            onChange={setUnit}
             required
-          >
-            {UNITS.map((u) => (
-              <option key={u} value={u}>
-                {u}
-              </option>
-            ))}
-          </Select>
+          />
           <div className="flex gap-2 pt-1">
             <Button
               type="button"

@@ -17,6 +17,7 @@ import {
 } from "@/hooks/useRecipes";
 import { formatCurrency } from "@/lib/utils";
 import { ImportExcelModal } from "@/components/ui/ImportExcelModal";
+import { UnitSelect } from "@/components/ui/UnitSelect";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   ArrowDown,
@@ -111,7 +112,7 @@ export default function RecipesPage() {
     { item_id: "", sub_recipe_id: "", quantity_used: "" },
   ]);
   const [isIngredient, setIsIngredient] = useState(false);
-  const [unit, setUnit] = useState<Recipe["unit"]>("pcs");
+  const [unit, setUnit] = useState<string>("pcs");
 
   function openCreate() {
     setEditing(null);
@@ -357,16 +358,11 @@ export default function RecipesPage() {
             </span>
           </label>
           {isIngredient && (
-            <Select
-              label="Unit"
+            <UnitSelect
               value={unit ?? "pcs"}
-              onChange={(e) => setUnit(e.target.value as Recipe["unit"])}
-              required
-            >
-              {(["gr", "ml", "pcs", "kg", "liter"] as const).map((u) => (
-                <option key={u} value={u}>{u}</option>
-              ))}
-            </Select>
+              onChange={setUnit}
+              required={isIngredient}
+            />
           )}
 
           <div>
