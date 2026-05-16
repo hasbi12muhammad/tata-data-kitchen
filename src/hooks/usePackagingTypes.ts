@@ -49,7 +49,7 @@ export function useDeletePackagingType() {
         .select("id", { count: "exact", head: true })
         .eq("pkg_type_id", id);
       if ((count ?? 0) > 0) {
-        throw new Error(`Kemasan masih dipakai di ${count} transaksi`);
+        throw new Error(`Kemasan masih dipakai di ${count ?? 0} transaksi`);
       }
       const { error } = await supabase.from("packaging_types").delete().eq("id", id);
       if (error) throw error;
