@@ -5,7 +5,11 @@ export const dynamic = "force-dynamic";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { HARDCODED_UNITS } from "@/components/ui/UnitSelect";
+import { useCustomUnits, useCreateCustomUnit, useDeleteCustomUnit } from "@/hooks/useUnits";
+import { usePackagingTypes, useCreatePackagingType, useDeletePackagingType } from "@/hooks/usePackagingTypes";
 import { createClient } from "@/lib/supabase/client";
+import { Trash2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -68,6 +72,20 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [passwordLoading, setPasswordLoading] = useState(false);
+
+  const { data: customUnits = [] } = useCustomUnits();
+  const createCustomUnit = useCreateCustomUnit();
+  const deleteCustomUnit = useDeleteCustomUnit();
+
+  const { data: packagingTypes = [] } = usePackagingTypes();
+  const createPkgType = useCreatePackagingType();
+  const deletePkgType = useDeletePackagingType();
+
+  const [newUnitName, setNewUnitName] = useState("");
+  const [addingUnit, setAddingUnit] = useState(false);
+
+  const [newPkgName, setNewPkgName] = useState("");
+  const [addingPkg, setAddingPkg] = useState(false);
 
   async function handleEmailUpdate(e: React.FormEvent) {
     e.preventDefault();
@@ -203,6 +221,174 @@ export default function SettingsPage() {
               Save
             </Button>
           </form>
+        </div>
+
+        {/* Satuan Bahan Baku */}
+        <div className="bg-[#FBF8F2] rounded-2xl border border-[#D9CCAF] shadow-sm p-6">
+          <h2 className="text-base font-semibold text-[#2C1810] mb-1">Satuan Bahan Baku</h2>
+          <p className="text-sm text-[#7C6352] mb-4">
+            Satuan yang tersedia untuk bahan baku dan resep.
+          </p>
+
+          <div className="mb-3">
+            <p className="text-xs font-medium text-[#7C6352] mb-2">Bawaan sistem</p>
+            <div className="flex flex-wrap gap-2">
+              {HARDCODED_UNITS.map((u) => (
+                <span key={u} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#EDE4CF] text-[#5C4535]">
+                  {u}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {customUnits.length > 0 && (
+            <div className="mb-3">
+              <p className="text-xs font-medium text-[#7C6352] mb-2">Satuan kustom</p>
+              <div className="flex flex-wrap gap-2">
+                {customUnits.map((u) => (
+                  <span key={u.id} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-[#D9CCAF]/60 text-[#2C1810]">
+                    {u.name}
+                    <button
+                      type="button"
+                      onClick={() => deleteCustomUnit.mutate({ id: u.id, name: u.name })}
+                      disabled={deleteCustomUnit.isPending}
+                      className="ml-0.5 text-[#7C6352] hover:text-[#A05035] disabled:opacity-50 transition-colors"
+                      aria-label={`Hapus satuan ${u.name}`}
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {addingUnit ? (
+            <div className="flex gap-2 mt-2">
+              <input
+                autoFocus
+                className="h-9 rounded-lg border border-[#D9CCAF] bg-white px-3 text-sm text-[#2C1810] flex-1 focus:outline-none focus:ring-2 focus:ring-[#A05035]"
+                placeholder="Nama satuan baru..."
+                value={newUnitName}
+                onChange={(e) => setNewUnitName(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (!newUnitName.trim()) return;
+                    await createCustomUnit.mutateAsync(newUnitName.trim());
+                    setNewUnitName("");
+                    setAddingUnit(false);
+                  }
+                  if (e.key === "Escape") { setAddingUnit(false); setNewUnitName(""); }
+                }}
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!newUnitName.trim()) return;
+                  await createCustomUnit.mutateAsync(newUnitName.trim());
+                  setNewUnitName("");
+                  setAddingUnit(false);
+                }}
+                disabled={!newUnitName.trim() || createCustomUnit.isPending}
+                className="px-3 h-9 rounded-lg bg-[#A05035] text-white text-sm font-medium disabled:opacity-50 hover:bg-[#8B4530] transition-colors"
+              >
+                Tambah
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAddingUnit(false); setNewUnitName(""); }}
+                className="px-3 h-9 rounded-lg border border-[#D9CCAF] text-sm text-[#7C6352] hover:bg-[#EDE4CF] transition-colors"
+              >
+                Batal
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddingUnit(true)}
+              className="mt-2 text-sm text-[#A05035] font-medium hover:underline"
+            >
+              + Tambah Satuan
+            </button>
+          )}
+        </div>
+
+        {/* Jenis Kemasan */}
+        <div className="bg-[#FBF8F2] rounded-2xl border border-[#D9CCAF] shadow-sm p-6">
+          <h2 className="text-base font-semibold text-[#2C1810] mb-1">Jenis Kemasan</h2>
+          <p className="text-sm text-[#7C6352] mb-4">
+            Nama kemasan yang dipakai saat mencatat pembelian (bungkus, galon, karung, dll).
+          </p>
+
+          {packagingTypes.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {packagingTypes.map((pt) => (
+                <span key={pt.id} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-[#D9CCAF]/60 text-[#2C1810]">
+                  {pt.name}
+                  <button
+                    type="button"
+                    onClick={() => deletePkgType.mutate(pt.id)}
+                    disabled={deletePkgType.isPending}
+                    className="ml-0.5 text-[#7C6352] hover:text-[#A05035] disabled:opacity-50 transition-colors"
+                    aria-label={`Hapus kemasan ${pt.name}`}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {addingPkg ? (
+            <div className="flex gap-2">
+              <input
+                autoFocus
+                className="h-9 rounded-lg border border-[#D9CCAF] bg-white px-3 text-sm text-[#2C1810] flex-1 focus:outline-none focus:ring-2 focus:ring-[#A05035]"
+                placeholder="Nama kemasan baru..."
+                value={newPkgName}
+                onChange={(e) => setNewPkgName(e.target.value)}
+                onKeyDown={async (e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    if (!newPkgName.trim()) return;
+                    await createPkgType.mutateAsync(newPkgName.trim());
+                    setNewPkgName("");
+                    setAddingPkg(false);
+                  }
+                  if (e.key === "Escape") { setAddingPkg(false); setNewPkgName(""); }
+                }}
+              />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!newPkgName.trim()) return;
+                  await createPkgType.mutateAsync(newPkgName.trim());
+                  setNewPkgName("");
+                  setAddingPkg(false);
+                }}
+                disabled={!newPkgName.trim() || createPkgType.isPending}
+                className="px-3 h-9 rounded-lg bg-[#A05035] text-white text-sm font-medium disabled:opacity-50 hover:bg-[#8B4530] transition-colors"
+              >
+                Tambah
+              </button>
+              <button
+                type="button"
+                onClick={() => { setAddingPkg(false); setNewPkgName(""); }}
+                className="px-3 h-9 rounded-lg border border-[#D9CCAF] text-sm text-[#7C6352] hover:bg-[#EDE4CF] transition-colors"
+              >
+                Batal
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAddingPkg(true)}
+              className="text-sm text-[#A05035] font-medium hover:underline"
+            >
+              + Tambah Kemasan
+            </button>
+          )}
         </div>
       </div>
     </AppLayout>
