@@ -131,13 +131,15 @@ export default function PurchasesPage() {
 
   function openEdit(p: Purchase) {
     setEditing(p);
+    setItemId("");
     setQuantity(String(p.quantity));
     setPricePerUnit(String(p.price_per_unit));
-    setUsePkg(!!(p as any).pkg_type_id);
-    setPkgTypeId((p as any).pkg_type_id ?? "");
-    setPkgQty((p as any).pkg_qty ? String((p as any).pkg_qty) : "");
-    setSizePerPkg((p as any).size_per_pkg ? String((p as any).size_per_pkg) : "");
+    setUsePkg(!!p.pkg_type_id);
+    setPkgTypeId(p.pkg_type_id ?? "");
+    setPkgQty(p.pkg_qty ? String(p.pkg_qty) : "");
+    setSizePerPkg(p.size_per_pkg ? String(p.size_per_pkg) : "");
     setAddingPkgType(false);
+    setNewPkgTypeName("");
     setDate(new Date(p.created_at).toISOString().slice(0, 10));
     setModalOpen(true);
   }
@@ -190,7 +192,7 @@ export default function PurchasesPage() {
     } else {
       if (!pricePerUnit || Number(pricePerUnit) <= 0) return;
       if (usePkg) {
-        if (!pkgQty || !sizePerPkg) return;
+        if (!pkgTypeId || !pkgQty || !sizePerPkg) return;
         if (Number(pkgQty) <= 0 || Number(sizePerPkg) <= 0) return;
       } else {
         if (!quantity || Number(quantity) <= 0) return;
@@ -903,7 +905,7 @@ export default function PurchasesPage() {
                   checked={usePkg}
                   onChange={(e) => {
                     setUsePkg(e.target.checked);
-                    if (!e.target.checked) { setPkgTypeId(""); setPkgQty(""); setSizePerPkg(""); }
+                    if (!e.target.checked) { setPkgTypeId(""); setPkgQty(""); setSizePerPkg(""); setAddingPkgType(false); setNewPkgTypeName(""); }
                   }}
                   className="rounded border-[#D9CCAF] text-[#A05035] focus:ring-[#A05035]"
                 />
