@@ -170,7 +170,7 @@ export default function PurchasesPage() {
       await updatePurchase.mutateAsync({
         id: editing.id,
         quantity: Number(quantity),
-        total_price: Number(totalPrice),
+        price_per_unit: Number(quantity) > 0 ? Number(totalPrice) / Number(quantity) : 0,
       });
     } else if (isProduction) {
       if (!subRecipeId) return;
@@ -187,7 +187,7 @@ export default function PurchasesPage() {
       await createPurchase.mutateAsync({
         item_id: itemId,
         quantity: Number(quantity),
-        total_price: Number(totalPrice),
+        price_per_unit: Number(quantity) > 0 ? Number(totalPrice) / Number(quantity) : 0,
         date,
       });
     }

@@ -2,10 +2,24 @@ export interface Item {
   id: string;
   user_id: string;
   name: string;
-  unit: "gr" | "ml" | "pcs" | "kg" | "liter";
+  unit: string;
   avg_price: number;
   prev_avg_price: number;
   stock: number;
+  created_at: string;
+}
+
+export interface CustomUnit {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface PackagingType {
+  id: string;
+  user_id: string;
+  name: string;
   created_at: string;
 }
 
@@ -18,6 +32,10 @@ export interface Purchase {
   price_per_unit: number;
   created_at: string;
   item?: Item;
+  pkg_type_id?: string | null;
+  pkg_qty?: number | null;
+  size_per_pkg?: number | null;
+  pkg_type?: PackagingType;
 }
 
 export interface Recipe {
@@ -27,7 +45,7 @@ export interface Recipe {
   hpp: number;
   prev_hpp: number;
   is_ingredient: boolean;
-  unit?: "gr" | "ml" | "pcs" | "kg" | "liter";
+  unit?: string;
   stock: number;
   avg_price: number;
   created_at: string;
