@@ -359,7 +359,7 @@ export default function RecipesPage() {
           </label>
           {isIngredient && (
             <UnitSelect
-              value={unit ?? "pcs"}
+              value={unit}
               onChange={setUnit}
               required={isIngredient}
             />

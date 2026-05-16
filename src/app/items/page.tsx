@@ -45,7 +45,7 @@ export default function ItemsPage() {
     } = await supabase.auth.getUser();
     const allUnits = [
       ...HARDCODED_UNITS,
-      ...(customUnits?.map((u) => u.name) ?? []),
+      ...(customUnits?.map((u) => u.name.toLowerCase()) ?? []),
     ];
     const valid = rows
       .map((r) => ({
