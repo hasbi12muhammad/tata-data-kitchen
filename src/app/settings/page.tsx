@@ -274,7 +274,7 @@ export default function SettingsPage() {
                 onKeyDown={async (e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    if (!newUnitName.trim()) return;
+                    if (!newUnitName.trim() || createCustomUnit.isPending) return;
                     await createCustomUnit.mutateAsync(newUnitName.trim());
                     setNewUnitName("");
                     setAddingUnit(false);
@@ -341,7 +341,7 @@ export default function SettingsPage() {
           )}
 
           {addingPkg ? (
-            <div className="flex gap-2">
+            <div className="flex gap-2 mt-2">
               <input
                 autoFocus
                 className="h-9 rounded-lg border border-[#D9CCAF] bg-white px-3 text-sm text-[#2C1810] flex-1 focus:outline-none focus:ring-2 focus:ring-[#A05035]"
@@ -351,7 +351,7 @@ export default function SettingsPage() {
                 onKeyDown={async (e) => {
                   if (e.key === "Enter") {
                     e.preventDefault();
-                    if (!newPkgName.trim()) return;
+                    if (!newPkgName.trim() || createPkgType.isPending) return;
                     await createPkgType.mutateAsync(newPkgName.trim());
                     setNewPkgName("");
                     setAddingPkg(false);
