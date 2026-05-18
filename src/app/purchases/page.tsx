@@ -930,8 +930,9 @@ export default function PurchasesPage() {
                           onKeyDown={async (e) => {
                             if (e.key === "Enter") {
                               e.preventDefault();
-                              if (!newPkgTypeName.trim()) return;
-                              await createPkgType.mutateAsync(newPkgTypeName.trim());
+                              if (!newPkgTypeName.trim() || createPkgType.isPending) return;
+                              const newId = await createPkgType.mutateAsync(newPkgTypeName.trim());
+                              setPkgTypeId(newId);
                               setNewPkgTypeName("");
                               setAddingPkgType(false);
                             }
@@ -941,7 +942,8 @@ export default function PurchasesPage() {
                         <button type="button"
                           onClick={async () => {
                             if (!newPkgTypeName.trim()) return;
-                            await createPkgType.mutateAsync(newPkgTypeName.trim());
+                            const newId = await createPkgType.mutateAsync(newPkgTypeName.trim());
+                            setPkgTypeId(newId);
                             setNewPkgTypeName("");
                             setAddingPkgType(false);
                           }}

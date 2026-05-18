@@ -26,10 +26,13 @@ export function useCreatePackagingType() {
     mutationFn: async (name: string) => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("packaging_types")
-        .insert({ name: name.trim(), user_id: user!.id });
+        .insert({ name: name.trim(), user_id: user!.id })
+        .select("id")
+        .single();
       if (error) throw error;
+      return data.id as string;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["packaging_types"] });
