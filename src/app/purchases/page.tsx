@@ -919,7 +919,7 @@ export default function PurchasesPage() {
                   className="rounded border-[#D9CCAF] text-[#A05035] focus:ring-[#A05035]"
                 />
                 <label htmlFor="usePkg" className="text-sm text-[#4A3728] cursor-pointer">
-                  Beli per kemasan?
+                  Buy by package?
                 </label>
               </div>
 
@@ -927,13 +927,13 @@ export default function PurchasesPage() {
                 <div className="rounded-lg border border-[#D9CCAF] bg-[#F5EFE0] p-3 space-y-3">
                   {/* Jenis kemasan */}
                   <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-[#7C6352]">Jenis kemasan</label>
+                    <label className="text-xs font-medium text-[#7C6352]">Packaging type</label>
                     {addingPkgType ? (
                       <div className="flex gap-2">
                         <input
                           autoFocus
                           className="h-9 rounded-lg border border-[#D9CCAF] bg-[#FBF8F2] px-3 text-sm text-[#2C1810] flex-1 focus:outline-none focus:ring-2 focus:ring-[#A05035]"
-                          placeholder="Nama kemasan baru..."
+                          placeholder="New packaging name..."
                           value={newPkgTypeName}
                           onChange={(e) => setNewPkgTypeName(e.target.value)}
                           onKeyDown={async (e) => {
@@ -958,9 +958,9 @@ export default function PurchasesPage() {
                           }}
                           disabled={!newPkgTypeName.trim() || createPkgType.isPending}
                           className="px-3 h-9 rounded-lg bg-[#A05035] text-white text-sm disabled:opacity-50 hover:bg-[#8B4530] transition-colors"
-                        >Tambah</button>
+                        >Add</button>
                         <button type="button" onClick={() => { setAddingPkgType(false); setNewPkgTypeName(""); }}
-                          className="px-3 h-9 rounded-lg border border-[#D9CCAF] text-sm text-[#7C6352] hover:bg-[#EDE4CF] transition-colors">Batal</button>
+                          className="px-3 h-9 rounded-lg border border-[#D9CCAF] text-sm text-[#7C6352] hover:bg-[#EDE4CF] transition-colors">Cancel</button>
                       </div>
                     ) : (
                       <div className="flex gap-2">
@@ -969,14 +969,14 @@ export default function PurchasesPage() {
                           value={pkgTypeId}
                           onChange={(e) => setPkgTypeId(e.target.value)}
                         >
-                          <option value="">Pilih kemasan...</option>
+                          <option value="">Select packaging...</option>
                           {packagingTypes.map((pt) => (
                             <option key={pt.id} value={pt.id}>{pt.name}</option>
                           ))}
                         </select>
                         <button type="button" onClick={() => setAddingPkgType(true)}
                           className="px-3 h-9 rounded-lg border border-[#A05035] text-[#A05035] text-sm hover:bg-[#A05035]/10 transition-colors">
-                          + Tambah
+                          + Add
                         </button>
                       </div>
                     )}
@@ -985,7 +985,7 @@ export default function PurchasesPage() {
                   {/* Jumlah & Isi */}
                   <div className="flex gap-2 items-end">
                     <div className="flex-1">
-                      <label className="block text-xs font-medium text-[#7C6352] mb-1">Jumlah kemasan</label>
+                      <label className="block text-xs font-medium text-[#7C6352] mb-1">No. of packages</label>
                       <input
                         type="number" min="0.01" step="0.01"
                         className="h-9 w-full rounded-lg border border-[#D9CCAF] bg-[#FBF8F2] px-3 text-sm text-[#2C1810] focus:outline-none focus:ring-2 focus:ring-[#A05035]"
@@ -997,7 +997,7 @@ export default function PurchasesPage() {
                     <span className="text-[#B88D6A] pb-2">×</span>
                     <div className="flex-1">
                       <label className="block text-xs font-medium text-[#7C6352] mb-1">
-                        Isi per kemasan ({selectedItem?.unit ?? "unit"})
+                        Qty per package ({selectedItem?.unit ?? "unit"})
                       </label>
                       <input
                         type="number" min="0.01" step="0.01"
@@ -1019,7 +1019,7 @@ export default function PurchasesPage() {
                 </div>
               ) : (
                 <Input
-                  label={`Jumlah (${selectedItem?.unit ?? "unit"})`}
+                  label={`Quantity (${selectedItem?.unit ?? "unit"})`}
                   type="number"
                   min="0.01"
                   step="0.01"
@@ -1037,21 +1037,21 @@ export default function PurchasesPage() {
                     onClick={() => { setPkgPriceMode("per_unit"); setPricePerPkg(""); }}
                     className={`flex-1 py-1 rounded-md text-xs font-medium transition-colors ${pkgPriceMode === "per_unit" ? "bg-white text-[#2C1810] shadow-sm" : "text-[#7C6352] hover:text-[#2C1810]"}`}
                   >
-                    Harga per {selectedItem?.unit ?? "unit"}
+                    Price per {selectedItem?.unit ?? "unit"}
                   </button>
                   <button
                     type="button"
                     onClick={() => { setPkgPriceMode("per_pkg"); setPricePerUnit(""); }}
                     className={`flex-1 py-1 rounded-md text-xs font-medium transition-colors ${pkgPriceMode === "per_pkg" ? "bg-white text-[#2C1810] shadow-sm" : "text-[#7C6352] hover:text-[#2C1810]"}`}
                   >
-                    Harga per kemasan
+                    Price per package
                   </button>
                 </div>
               )}
 
               {usePkg && pkgPriceMode === "per_pkg" ? (
                 <Input
-                  label="Harga per kemasan (Rp)"
+                  label="Price per package ($)"
                   type="number"
                   min="0"
                   step="1"
@@ -1061,7 +1061,7 @@ export default function PurchasesPage() {
                 />
               ) : (
                 <Input
-                  label={`Harga per ${selectedItem?.unit ?? "unit"}`}
+                  label={`Price per ${selectedItem?.unit ?? "unit"}`}
                   type="number"
                   min="0"
                   step="1"
@@ -1085,7 +1085,7 @@ export default function PurchasesPage() {
                   {priceDiff !== null && pricePct !== null && (
                     <p className={`text-xs font-medium ${priceDiff > 0 ? "text-red-600" : "text-green-700"}`}>
                       {priceDiff > 0 ? "▲" : "▼"}{" "}
-                      {formatCurrency(Math.abs(priceDiff))} ({pricePct > 0 ? "+" : ""}{pricePct.toFixed(1)}%) vs avg harga
+                      {formatCurrency(Math.abs(priceDiff))} ({pricePct > 0 ? "+" : ""}{pricePct.toFixed(1)}%) vs avg price
                     </p>
                   )}
                 </div>

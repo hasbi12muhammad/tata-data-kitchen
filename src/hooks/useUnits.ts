@@ -33,7 +33,7 @@ export function useCreateCustomUnit() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["custom_units"] });
-      toast.success("Satuan ditambahkan");
+      toast.success("Unit added");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -54,14 +54,14 @@ export function useDeleteCustomUnit() {
         .eq("unit", name);
       const total = (itemCount ?? 0) + (recipeCount ?? 0);
       if (total > 0) {
-        throw new Error(`Satuan masih dipakai oleh ${total} item/resep`);
+        throw new Error(`Unit is still used by ${total} item(s)/recipe(s)`);
       }
       const { error } = await supabase.from("custom_units").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["custom_units"] });
-      toast.success("Satuan dihapus");
+      toast.success("Unit deleted");
     },
     onError: (e: Error) => toast.error(e.message),
   });

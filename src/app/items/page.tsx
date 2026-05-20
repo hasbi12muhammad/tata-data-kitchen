@@ -447,7 +447,7 @@ export default function ItemsPage() {
           ["Minyak Goreng", "liter"],
         ]}
         previewColumns={[
-          { key: "nama", label: "Nama" },
+          { key: "nama", label: "Name" },
           { key: "unit", label: "Unit" },
         ]}
         onImport={handleImportItems}

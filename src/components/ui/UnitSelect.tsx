@@ -40,7 +40,7 @@ export function UnitSelect({ value, onChange, required, label = "Unit" }: UnitSe
           <input
             autoFocus
             className={`${cls} flex-1`}
-            placeholder="Nama satuan baru..."
+            placeholder="New unit name..."
             value={newUnit}
             onChange={(e) => setNewUnit(e.target.value)}
             onKeyDown={(e) => {
@@ -54,14 +54,14 @@ export function UnitSelect({ value, onChange, required, label = "Unit" }: UnitSe
             disabled={!newUnit.trim() || createUnit.isPending}
             className="px-3 h-9 rounded-lg bg-[#A05035] text-white text-sm font-medium disabled:opacity-50 hover:bg-[#8B4530] transition-colors"
           >
-            Tambah
+            Add
           </button>
           <button
             type="button"
             onClick={() => { setAdding(false); setNewUnit(""); }}
             className="px-3 h-9 rounded-lg border border-[#D9CCAF] text-sm text-[#7C6352] hover:bg-[#EDE4CF] transition-colors"
           >
-            Batal
+            Cancel
           </button>
         </div>
       ) : (
@@ -85,7 +85,7 @@ export function UnitSelect({ value, onChange, required, label = "Unit" }: UnitSe
               ))}
             </>
           )}
-          <option value="__add__">+ Tambah satuan baru...</option>
+          <option value="__add__">+ Add new unit...</option>
         </select>
       )}
     </div>

@@ -171,7 +171,7 @@ export default function SettingsPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="email@baru.com"
+              placeholder="new@email.com"
             />
             <Button type="submit" loading={emailLoading} className="self-start">
               Save
@@ -225,13 +225,13 @@ export default function SettingsPage() {
 
         {/* Satuan Bahan Baku */}
         <div className="bg-[#FBF8F2] rounded-2xl border border-[#D9CCAF] shadow-sm p-6">
-          <h2 className="text-base font-semibold text-[#2C1810] mb-1">Satuan Bahan Baku</h2>
+          <h2 className="text-base font-semibold text-[#2C1810] mb-1">Raw Material Units</h2>
           <p className="text-sm text-[#7C6352] mb-4">
-            Satuan yang tersedia untuk bahan baku dan resep.
+            Units available for raw materials and recipes.
           </p>
 
           <div className="mb-3">
-            <p className="text-xs font-medium text-[#7C6352] mb-2">Bawaan sistem</p>
+            <p className="text-xs font-medium text-[#7C6352] mb-2">Built-in units</p>
             <div className="flex flex-wrap gap-2">
               {HARDCODED_UNITS.map((u) => (
                 <span key={u} className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-[#EDE4CF] text-[#5C4535]">
@@ -243,7 +243,7 @@ export default function SettingsPage() {
 
           {customUnits.length > 0 && (
             <div className="mb-3">
-              <p className="text-xs font-medium text-[#7C6352] mb-2">Satuan kustom</p>
+              <p className="text-xs font-medium text-[#7C6352] mb-2">Custom units</p>
               <div className="flex flex-wrap gap-2">
                 {customUnits.map((u) => (
                   <span key={u.id} className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-[#D9CCAF]/60 text-[#2C1810]">
@@ -253,7 +253,7 @@ export default function SettingsPage() {
                       onClick={() => deleteCustomUnit.mutate({ id: u.id, name: u.name })}
                       disabled={deleteCustomUnit.isPending}
                       className="ml-0.5 text-[#7C6352] hover:text-[#A05035] disabled:opacity-50 transition-colors"
-                      aria-label={`Hapus satuan ${u.name}`}
+                      aria-label={`Delete unit ${u.name}`}
                     >
                       <Trash2 size={12} />
                     </button>
@@ -268,7 +268,7 @@ export default function SettingsPage() {
               <input
                 autoFocus
                 className="h-9 rounded-lg border border-[#D9CCAF] bg-white px-3 text-sm text-[#2C1810] flex-1 focus:outline-none focus:ring-2 focus:ring-[#A05035]"
-                placeholder="Nama satuan baru..."
+                placeholder="New unit name..."
                 value={newUnitName}
                 onChange={(e) => setNewUnitName(e.target.value)}
                 onKeyDown={async (e) => {
@@ -293,14 +293,14 @@ export default function SettingsPage() {
                 disabled={!newUnitName.trim() || createCustomUnit.isPending}
                 className="px-3 h-9 rounded-lg bg-[#A05035] text-white text-sm font-medium disabled:opacity-50 hover:bg-[#8B4530] transition-colors"
               >
-                Tambah
+                Add
               </button>
               <button
                 type="button"
                 onClick={() => { setAddingUnit(false); setNewUnitName(""); }}
                 className="px-3 h-9 rounded-lg border border-[#D9CCAF] text-sm text-[#7C6352] hover:bg-[#EDE4CF] transition-colors"
               >
-                Batal
+                Cancel
               </button>
             </div>
           ) : (
@@ -309,16 +309,16 @@ export default function SettingsPage() {
               onClick={() => setAddingUnit(true)}
               className="mt-2 text-sm text-[#A05035] font-medium hover:underline"
             >
-              + Tambah Satuan
+              + Add Unit
             </button>
           )}
         </div>
 
         {/* Jenis Kemasan */}
         <div className="bg-[#FBF8F2] rounded-2xl border border-[#D9CCAF] shadow-sm p-6">
-          <h2 className="text-base font-semibold text-[#2C1810] mb-1">Jenis Kemasan</h2>
+          <h2 className="text-base font-semibold text-[#2C1810] mb-1">Packaging Types</h2>
           <p className="text-sm text-[#7C6352] mb-4">
-            Nama kemasan yang dipakai saat mencatat pembelian (bungkus, galon, karung, dll).
+            Packaging names used when recording purchases (bag, jug, sack, etc).
           </p>
 
           {packagingTypes.length > 0 && (
@@ -331,7 +331,7 @@ export default function SettingsPage() {
                     onClick={() => deletePkgType.mutate(pt.id)}
                     disabled={deletePkgType.isPending}
                     className="ml-0.5 text-[#7C6352] hover:text-[#A05035] disabled:opacity-50 transition-colors"
-                    aria-label={`Hapus kemasan ${pt.name}`}
+                    aria-label={`Delete packaging ${pt.name}`}
                   >
                     <Trash2 size={12} />
                   </button>
@@ -345,7 +345,7 @@ export default function SettingsPage() {
               <input
                 autoFocus
                 className="h-9 rounded-lg border border-[#D9CCAF] bg-white px-3 text-sm text-[#2C1810] flex-1 focus:outline-none focus:ring-2 focus:ring-[#A05035]"
-                placeholder="Nama kemasan baru..."
+                placeholder="New packaging name..."
                 value={newPkgName}
                 onChange={(e) => setNewPkgName(e.target.value)}
                 onKeyDown={async (e) => {
@@ -370,14 +370,14 @@ export default function SettingsPage() {
                 disabled={!newPkgName.trim() || createPkgType.isPending}
                 className="px-3 h-9 rounded-lg bg-[#A05035] text-white text-sm font-medium disabled:opacity-50 hover:bg-[#8B4530] transition-colors"
               >
-                Tambah
+                Add
               </button>
               <button
                 type="button"
                 onClick={() => { setAddingPkg(false); setNewPkgName(""); }}
                 className="px-3 h-9 rounded-lg border border-[#D9CCAF] text-sm text-[#7C6352] hover:bg-[#EDE4CF] transition-colors"
               >
-                Batal
+                Cancel
               </button>
             </div>
           ) : (
@@ -386,7 +386,7 @@ export default function SettingsPage() {
               onClick={() => setAddingPkg(true)}
               className="text-sm text-[#A05035] font-medium hover:underline"
             >
-              + Tambah Kemasan
+              + Add Packaging
             </button>
           )}
         </div>
