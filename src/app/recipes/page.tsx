@@ -210,10 +210,12 @@ export default function RecipesPage() {
             variant="secondary"
             onClick={() => setImportOpen(true)}
           >
-            <FileUp className="w-4 h-4" /> Import
+            <FileUp className="w-4 h-4" />
+            <span className="hidden sm:inline">Import</span>
           </Button>
           <Button size="sm" onClick={openCreate}>
-            <Plus className="w-4 h-4" /> New Product
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">New Product</span>
           </Button>
         </div>
       }
