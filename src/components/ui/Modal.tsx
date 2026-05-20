@@ -43,7 +43,8 @@ export function Modal({
       />
       <div
         className={cn(
-          "relative w-full bg-[#FBF8F2] rounded-2xl shadow-xl",
+          "relative w-full bg-[#FBF8F2] rounded-2xl shadow-xl flex flex-col",
+          "max-h-[calc(100dvh-2rem)]",
           "animate-in fade-in slide-in-from-bottom-4 duration-200",
           sizes[size],
         )}
@@ -51,7 +52,7 @@ export function Modal({
         aria-modal
         aria-labelledby="modal-title"
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5DACA]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5DACA] shrink-0">
           <h2
             id="modal-title"
             className="text-base font-semibold text-[#2C1810]"
@@ -66,7 +67,7 @@ export function Modal({
             <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="px-6 py-4">{children}</div>
+        <div className="px-6 py-4 overflow-y-auto">{children}</div>
       </div>
     </div>
   );
