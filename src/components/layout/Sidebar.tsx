@@ -10,6 +10,7 @@ import {
   LayoutDashboard,
   LogOut,
   Package,
+  PlayCircle,
   Receipt,
   ShoppingCart,
   TrendingUp,
@@ -26,6 +27,7 @@ const ALL_NAV = [
   { href: "/recipes", label: "Products", icon: BookOpen },
   { href: "/sales", label: "Sales", icon: TrendingUp },
   { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/tutorial", label: "Tutorial", icon: PlayCircle },
 ];
 
 interface SidebarProps {

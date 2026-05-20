@@ -18,6 +18,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useState } from "react";
+import { TutorialBanner, TutorialButton } from "@/components/ui/TutorialBanner";
 
 function todayString(): string {
   return new Date().toISOString().split("T")[0];
@@ -140,13 +141,18 @@ export default function DashboardPage() {
         <h2 className="text-xl sm:text-2xl font-bold text-[#2C1810] capitalize">
           {dateDisplay}
         </h2>
-        <input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-          className="h-9 rounded-lg border border-[#D9CCAF] bg-[#FBF8F2] px-3 text-sm text-[#2C1810] focus:outline-none focus:ring-2 focus:ring-[#A05035] focus:border-transparent"
-        />
+        <div className="flex items-center gap-2">
+          <TutorialButton />
+          <input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            className="h-9 rounded-lg border border-[#D9CCAF] bg-[#FBF8F2] px-3 text-sm text-[#2C1810] focus:outline-none focus:ring-2 focus:ring-[#A05035] focus:border-transparent"
+          />
+        </div>
       </div>
+
+      <TutorialBanner />
 
       {/* Summary grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
